@@ -8,13 +8,12 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "shared-db-clients" # Example for this specific library
-# The version is managed by semantic-release and will be updated automatically on release.
+name = "trading-engine-core"
 version = "0.0.0"
 authors = [
-  { name = "Trading Systems Team", email = "ven.ajie@protonmail.com" },
+    { name = "Trading Systems Team", email = "ven.ajie@protonmail.com" },
 ]
-description = "Shared database clients for the trading engine." # Example description
+description = "Core data contracts, models, and protocols for the trading engine."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Proprietary" }
@@ -23,10 +22,8 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
 ]
-# Define production dependencies here.
 dependencies = [
-    "asyncpg", # Example dependency
-    "redis",   # Example dependency
+    "pydantic>=2.0",
 ]
 
 [project.urls]
