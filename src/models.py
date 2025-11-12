@@ -79,7 +79,10 @@ class CycleClosedEvent(BaseEvent):
 
     reason: str = Field(
         ...,
-        description="The reason for closing the cycle (e.g., 'take_profit_hit', 'manual_close').",
+        description=(
+            "The reason for closing the cycle (e.g., "
+            "'take_profit_hit', 'manual_close')."
+        ),
     )
     final_pnl: float = Field(
         ..., description="The final realized profit or loss for the entire cycle."
