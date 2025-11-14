@@ -1,16 +1,9 @@
 
 # .github/workflows/python-publish.yml
 #
-# Standardized CI/CD pipeline for shared Python libraries.
-#
-# This workflow performs the following actions:
-# 1. On Pull Requests to `main`:
-#    - Lints code using Ruff.
-#    - Runs unit tests with Pytest and enforces a 95% coverage minimum.
-# 2. On Push to `main` (after a PR is merged):
-#    - Performs all the above checks.
-#    - If checks pass, it correctly bootstraps the initial release or
-#      publishes subsequent versions based on conventional commits.
+# Definitive CI/CD pipeline for shared Python libraries.
+# This workflow contains an explicit, robust bootstrap sequence for the
+# first release, and a fully automated sequence for all subsequent releases.
 
 name: Python Package CI/CD
 
@@ -81,7 +74,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install release dependencies
-        run: python -m pip install python-semantic-release build
+        run: python -m pip install --upgrade pip python-semantic-release build twine
 
       - name: Configure Git for CI/CD
         run: |
@@ -91,30 +84,32 @@ jobs:
       - name: Bootstrap Initial Release or Publish New Version
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TWINE_USERNAME: __token__
+          # For twine, the password is the GitHub token. The username can be the actor's name or __token__.
+          TWINE_USERNAME: ${{ github.actor }}
           TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Check if any tags exist in the repository.
-          # The `|| true` prevents the script from failing if no tags are found.
           LATEST_TAG=$(git describe --tags --abbrev=0 || true)
 
           if [ -z "$LATEST_TAG" ]; then
             # NO TAGS EXIST: This is the definitive bootstrap sequence.
             echo "No tags found. Bootstrapping initial release v0.1.0."
             
-            # Step 1: Create the git tag locally.
+            # Step 1: Tag and push to remote.
             git tag v0.1.0
-            
-            # Step 2: Push the tag to the remote repository.
             git push origin v0.1.0
             
-            # Step 3: Create the GitHub Release object from the remote tag.
-            gh release create v0.1.0 --notes "Initial release"
-
-            # Step 4: Build the package distributions (.whl and .tar.gz).
+            # Step 2: Build the package distributions.
             python -m build
 
-            # Step 5: Upload the built distributions to the GitHub Release.
+            # Step 3: Publish the distributions to GitHub Packages registry using twine.
+            # This is the critical step that populates the "Packages" section.
+            twine upload --repository-url https://pypi.pkg.github.com/${{ github.repository_owner }} dist/*
+
+            # Step 4: Create the corresponding GitHub Release for discoverability.
+            gh release create v0.1.0 --notes "Initial release"
+
+            # Step 5: (Optional but recommended) Upload assets to the release page.
             gh release upload v0.1.0 dist/*
           else
             # TAGS EXIST: Let semantic-release handle the fully automated process.
