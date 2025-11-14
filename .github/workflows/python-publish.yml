@@ -105,16 +105,19 @@ jobs:
             # Step 1: Create the git tag locally.
             git tag v0.1.0
             
-            # Step 2: Push the tag to the remote repository. This is the critical step.
+            # Step 2: Push the tag to the remote repository.
             git push origin v0.1.0
             
             # Step 3: Create the GitHub Release object from the remote tag.
             gh release create v0.1.0 --notes "Initial release"
-          else
-            echo "Tags found. Proceeding with standard release process."
-          fi
 
-          # Let semantic-release handle the final steps.
-          # If we bootstrapped, it will find the v0.1.0 release and upload assets.
-          # If not, it will calculate the next version from commits and publish it.
-          semantic-release publish
+            # Step 4: Build the package distributions (.whl and .tar.gz).
+            python -m build
+
+            # Step 5: Upload the built distributions to the GitHub Release.
+            gh release upload v0.1.0 dist/*
+          else
+            # TAGS EXIST: Let semantic-release handle the fully automated process.
+            echo "Tags found. Running standard publish."
+            semantic-release publish
+          fi
