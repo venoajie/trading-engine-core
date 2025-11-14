@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trading-engine-core"
-version = "0.0.0"
+version = "0.1.0"
 authors = [
     { name = "Trading Systems Team", email = "ven.ajie@protonmail.com" },
 ]
@@ -27,6 +27,7 @@ dependencies = [
 ]
 
 [project.urls]
+# This links the package back to its source repository on GitHub.
 "Homepage" = "https://github.com/venoajie/trading-engine-core"
 "Repository" = "https://github.com/venoajie/trading-engine-core"
 
@@ -61,6 +62,9 @@ changelog_file = "CHANGELOG.md"
 repository = "github"
 # Defines the branch from which releases are made.
 branch = "main"
+
+upload_to_repository = true
+repository_url = "https://pypi.pkg.github.com/venoajie"
 
 # Configuration for the Ruff linter and formatter.
 [tool.ruff]
