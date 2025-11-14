@@ -89,7 +89,7 @@ jobs:
       # This is the one-time bootstrap process.
       - name: Perform Semantic Release and Publish
         run: |
-          semantic-release version --force
+          semantic-release version 0.1.0
           semantic-release publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
