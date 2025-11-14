@@ -73,13 +73,17 @@ jobs:
 
     steps:
       # --- START CORRECTION ---
-      # Upgrade the action to the latest stable major version (v9).
-      # This new version uses an updated base image and does not have the
-      # bullseye-backports dependency issue.
+      # STEP 1: The repository must be checked out before the action can use it.
+      # This step was mistakenly removed in the previous refactoring.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # STEP 2: Call the dedicated action with the corrected inputs for v9.
       - name: Perform Semantic Release and Publish
         uses: relekang/python-semantic-release@v9
         with:
+          # The github_token is the only credential needed for v9.
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          repository_username: __token__
-          repository_password: ${{ secrets.GITHUB_TOKEN }}
       # --- END CORRECTION ---
