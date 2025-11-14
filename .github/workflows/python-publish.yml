@@ -72,18 +72,21 @@ jobs:
       packages: write
 
     steps:
-      # --- START CORRECTION ---
-      # STEP 1: The repository must be checked out before the action can use it.
-      # This step was mistakenly removed in the previous refactoring.
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # STEP 2: Call the dedicated action with the corrected inputs for v9.
+      # --- START CORRECTION ---
+      # This is the final, definitive configuration.
       - name: Perform Semantic Release and Publish
         uses: relekang/python-semantic-release@v9
         with:
-          # The github_token is the only credential needed for v9.
+          # The github_token is used by the action to create GitHub Releases.
           github_token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          # These environment variables are used by `twine` (inside the action)
+          # to authenticate and publish the package to the GitHub Package Registry.
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
       # --- END CORRECTION ---
