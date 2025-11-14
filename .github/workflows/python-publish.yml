@@ -100,14 +100,12 @@ jobs:
 
           if [ -z "$LATEST_TAG" ]; then
             # NO TAGS EXIST: This is the first release.
-            # Force the creation of the initial v0.1.0 release.
-            # This command creates the tag and the GitHub Release object.
-            echo "No tags found. Bootstrapping initial version v0.1.0."
-            semantic-release version --force v0.1.0
+            # We use `publish --new-version` to force the creation of the
+            # initial 0.1.0 release as a single, atomic operation.
+            echo "No tags found. Bootstrapping initial release v0.1.0."
+            semantic-release publish --new-version 0.1.0
+          else
+            # TAGS EXIST: Let semantic-release determine the next version automatically.
+            echo "Tags found. Running standard publish."
+            semantic-release publish
           fi
-
-          # Publish the package.
-          # If the version command just ran, this will publish v0.1.0.
-          # On subsequent runs, this command will calculate the next version
-          # from commits and publish it.
-          semantic-release publish
