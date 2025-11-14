@@ -36,7 +36,6 @@ dependencies = [
 where = ["src"]
 
 # Defines optional dependencies for development, testing, and releasing.
-# These are installed by `pip install -e .[dev]` in the CI pipeline.
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
@@ -51,7 +50,11 @@ dev = [
 # Configuration for python-semantic-release.
 [tool.semantic_release]
 version_variables = ["pyproject.toml:project.version"]
-build_command = "python -m build"
+# --- START CORRECTION ---
+# Make the build command self-sufficient by first installing the `build` package
+# and then running the build. This ensures it works in any minimal environment.
+build_command = "pip install build && python -m build"
+# --- END CORRECTION ---
 commit_parser = "conventional"
 changelog_file = "CHANGELOG.md"
 repository = "github"
