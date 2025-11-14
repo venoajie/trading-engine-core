@@ -1,3 +1,4 @@
+
 # .github/workflows/python-publish.yml
 #
 # Standardized CI/CD pipeline for shared Python libraries.
@@ -31,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Assumes Python 3.11 is the target version.
+        # Assumes Python 3.12 is the target version.
         # This can be expanded (e.g., [3.10, 3.11, 3.12]) to test against multiple versions.
         python-version: ["3.12"]
 
@@ -64,18 +65,6 @@ jobs:
             --cov=src \
             --cov-report=xml \
             --cov-fail-under=95 # Enforces the 95% coverage requirement from Epic 1.1
-
-            
-      # This step is optional but recommended. If you do not use Codecov,
-      # you can remove it, but you will need to create the CODECOV_TOKEN secret
-      # in your repository settings for it to work.
-
-#      - name: Upload coverage to Codecov
-#        uses: codecov/codecov-action@v4
-#        with:
-#          token: ${{ secrets.CODECOV_TOKEN }} # Repository secret for Codecov.io
-#          file: ./coverage.xml
-#          fail_ci_if_error: true
 
   publish:
     name: Publish to GitHub Packages
@@ -111,11 +100,17 @@ jobs:
 
       - name: 📦 [DIAGNOSTIC] Verify build artifacts
         run: ls -l dist/
-          
+
       - name: Perform Semantic Release
         env:
-          # The GITHUB_TOKEN is automatically provided by GitHub Actions.
-          # It is used for authenticating with the GitHub API and GitHub Packages.
+          # The GITHUB_TOKEN is used for authenticating with the GitHub API.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # --- START CORRECTION ---
+          # Provide explicit credentials for Twine (used by semantic-release)
+          # to publish the package to the GitHub Package Registry.
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          TWINE_REPOSITORY_URL: https://pypi.pkg.github.com/venoajie
+          # --- END CORRECTION ---
         run: |
           semantic-release publish
