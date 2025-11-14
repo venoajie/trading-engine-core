@@ -1,92 +1,90 @@
 
-# .github/workflows/python-publish.yml
+# pyproject.toml
 #
-# Standardized CI/CD pipeline for shared Python libraries.
-#
-# This workflow performs the following actions:
-# 1. On Pull Requests to `main`:
-#    - Lints code using Ruff.
-#    - Runs unit tests with Pytest and enforces a 95% coverage minimum.
-# 2. On Push to `main` (after a PR is merged):
-#    - Performs all the above checks.
-#    - If checks pass, it uses the dedicated python-semantic-release action to:
-#      - Correctly handle the Git environment and tag history.
-#      - Determine the next semantic version, tag, and create a GitHub Release.
-#      - Build and publish the package to the configured GitHub Packages registry.
+# This file serves as the central configuration for the Python project,
+# using the setuptools build backend.
 
-name: Python Package CI/CD
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+[project]
+name = "trading-engine-core"
+version = "0.1.0"
+authors = [
+    { name = "Trading Systems Team", email = "ven.ajie@protonmail.com" },
+]
+description = "Core data contracts, models, and protocols for the trading engine."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Proprietary" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "pydantic>=2.0",
+]
 
-jobs:
-  validate:
-    name: Lint & Test
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
+[project.urls]
+"Homepage" = "https://github.com/venoajie/trading-engine-core"
+"Repository" = "https://github.com/venoajie/trading-engine-core"
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+# Specifies the directory where the package source code resides.
+[tool.setuptools.packages.find]
+where = ["src"]
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+# Defines optional dependencies for development, testing, and releasing.
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",
+    "python-semantic-release>=9.0",
+    "build>=1.0",
+]
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .[dev]
+# --- Tool Configurations ---
 
-      - name: Lint with Ruff
-        run: |
-          ruff check .
-          ruff format --check .
+# Configuration for python-semantic-release.
+[tool.semantic_release]
+version_variables = ["pyproject.toml:project.version"]
+build_command = "pip install build && python -m build"
+commit_parser = "conventional"
+changelog_file = "CHANGELOG.md"
+repository = "github"
+branch = "main"
+upload_to_repository = true
+upload_to_release = false
+repository_url = "https://pypi.pkg.github.com/venoajie"
 
-      - name: Test with Pytest and generate coverage report
-        run: |
-          pytest \
-            --cov=src \
-            --cov-report=xml \
-            --cov-fail-under=95
 
-  publish:
-    name: Publish to GitHub Packages
-    needs: validate
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+# Configuration for the Ruff linter and formatter.
+[tool.ruff]
+line-length = 88
+src = ["src"]
 
-    permissions:
-      contents: write
-      packages: write
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
 
-      # --- START CORRECTION ---
-      # This is the final, definitive configuration.
-      - name: Perform Semantic Release and Publish
-        uses: relekang/python-semantic-release@v9
-        with:
-          # The github_token is used by the action to create GitHub Releases.
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          # These environment variables are used by `twine` (inside the action)
-          # to authenticate and publish the package to the GitHub Package Registry.
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-      # --- END CORRECTION ---
+# Configuration for Pytest.
+[tool.pytest.ini_options]
+addopts = "--cov=src --cov-report=term-missing"
+testpaths = [
+    "tests",
+]
