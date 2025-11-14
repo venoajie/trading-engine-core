@@ -1,5 +1,8 @@
 # pyproject.toml
 #
+
+# pyproject.toml
+#
 # This file serves as the central configuration for the Python project,
 # using the setuptools build backend.
 
@@ -62,9 +65,8 @@ changelog_file = "CHANGELOG.md"
 repository = "github"
 # Defines the branch from which releases are made.
 branch = "main"
-
+# Enable the upload functionality.
 upload_to_repository = true
-repository_url = "https://pypi.pkg.github.com/venoajie"
 
 # Configuration for the Ruff linter and formatter.
 [tool.ruff]
@@ -98,5 +100,3 @@ addopts = "--cov=src --cov-report=term-missing"
 testpaths = [
     "tests",
 ]
-
-
