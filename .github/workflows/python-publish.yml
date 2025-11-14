@@ -86,10 +86,11 @@ jobs:
         run: python -m pip install python-semantic-release build
 
       # --- START CORRECTION ---
-      # This is the one-time bootstrap command. The --force flag will override
-      # the "no tags found" error and create the initial release.
+      # This is the one-time bootstrap process.
       - name: Perform Semantic Release and Publish
-        run: semantic-release publish --force
+        run: |
+          semantic-release version --force
+          semantic-release publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TWINE_USERNAME: __token__
