@@ -81,10 +81,10 @@ jobs:
           fetch-depth: 0
 
       # --- START CORRECTION ---
-      # This step is critical. It ensures that all tags are available to the runner,
-      # which is required for semantic-release to determine the last version.
+      # Correctly fetch all tags from the remote without the --unshallow flag,
+      # which is unnecessary when fetch-depth is 0.
       - name: Fetch all history and tags
-        run: git fetch --prune --unshallow --tags
+        run: git fetch --prune --tags
       # --- END CORRECTION ---
 
       - name: Set up Python
