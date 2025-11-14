@@ -1,3 +1,4 @@
+
 # .github/workflows/python-publish.yml
 #
 # Standardized CI/CD pipeline for shared Python libraries.
@@ -98,16 +99,16 @@ jobs:
           LATEST_TAG=$(git describe --tags --abbrev=0 || true)
 
           if [ -z "$LATEST_TAG" ]; then
-            # NO TAGS EXIST: This is the first release.
-            # We will manually create the required state (tag and release)
-            # that semantic-release expects to find.
+            # NO TAGS EXIST: This is the definitive bootstrap sequence.
             echo "No tags found. Bootstrapping initial release v0.1.0."
             
             # Step 1: Create the git tag locally.
             git tag v0.1.0
             
-            # Step 2: Create the GitHub Release object from the tag.
-            # This uses the official GitHub CLI, which is pre-installed on runners.
+            # Step 2: Push the tag to the remote repository. This is the critical step.
+            git push origin v0.1.0
+            
+            # Step 3: Create the GitHub Release object from the remote tag.
             gh release create v0.1.0 --notes "Initial release"
           else
             echo "Tags found. Proceeding with standard release process."
