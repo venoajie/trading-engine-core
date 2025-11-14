@@ -73,11 +73,11 @@ jobs:
 
     steps:
       # --- START CORRECTION ---
-      # Replace the entire manual checkout, setup, and run sequence with the
-      # dedicated, idiomatic GitHub Action for python-semantic-release.
-      # This action correctly handles the complex Git state and authentication internally.
+      # Upgrade the action to the latest stable major version (v9).
+      # This new version uses an updated base image and does not have the
+      # bullseye-backports dependency issue.
       - name: Perform Semantic Release and Publish
-        uses: relekang/python-semantic-release@v8.5.0
+        uses: relekang/python-semantic-release@v9
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           repository_username: __token__
