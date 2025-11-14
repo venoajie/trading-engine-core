@@ -9,8 +9,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-# This is the definitive fix. The package name MUST be scoped to the GitHub Organization.
-name = "venoajie-trading-engine-core"
+# This is the definitive fix. For a personal account, the package name
+# MUST NOT be scoped with the username.
+name = "trading-engine-core"
 version = "0.1.0"
 authors = [
     { name = "Trading Systems Team", email = "ven.ajie@protonmail.com" },
