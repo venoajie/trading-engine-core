@@ -1,4 +1,6 @@
 
+**File:** `trading-engine-core/.github/workflows/python-publish.yml`
+```yaml
 # .github/workflows/python-publish.yml
 #
 # Standardized CI/CD pipeline for shared Python libraries.
@@ -100,15 +102,21 @@ jobs:
 
           if [ -z "$LATEST_TAG" ]; then
             # NO TAGS EXIST: This is the first release.
-            # Step 1: Force the creation of the version tag and GitHub Release object.
-            echo "No tags found. Bootstrapping initial version v0.1.0."
-            semantic-release version --new-version 0.1.0
-
-            # Step 2: Publish assets to the newly created release.
-            echo "Publishing assets to v0.1.0."
-            semantic-release publish
+            # We will manually create the required state (tag and release)
+            # that semantic-release expects to find.
+            echo "No tags found. Bootstrapping initial release v0.1.0."
+            
+            # Step 1: Create the git tag locally.
+            git tag v0.1.0
+            
+            # Step 2: Create the GitHub Release object from the tag.
+            # This uses the official GitHub CLI, which is pre-installed on runners.
+            gh release create v0.1.0 --notes "Initial release"
           else
-            # TAGS EXIST: Let semantic-release determine the next version automatically.
-            echo "Tags found. Running standard publish."
-            semantic-release publish
+            echo "Tags found. Proceeding with standard release process."
           fi
+
+          # Let semantic-release handle the final steps.
+          # If we bootstrapped, it will find the v0.1.0 release and upload assets.
+          # If not, it will calculate the next version from commits and publish it.
+          semantic-release publish
