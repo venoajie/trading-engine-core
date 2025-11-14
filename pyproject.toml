@@ -9,7 +9,8 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "trading-engine-core"
+# This is the definitive fix. The package name MUST be scoped to the GitHub Organization.
+name = "venoajie-trading-engine-core"
 version = "0.1.0"
 authors = [
     { name = "Trading Systems Team", email = "ven.ajie@protonmail.com" },
@@ -58,8 +59,6 @@ branch = "main"
 upload_to_repository = true
 upload_to_release = false
 repository_url = "https://pypi.pkg.github.com/venoajie"
-# This setting is crucial for correct versioning before 1.0.0.
-# It ensures 'feat' commits result in a minor bump (0.1.0 -> 0.2.0).
 major_on_zero = true
 
 
