@@ -58,11 +58,9 @@ branch = "main"
 upload_to_repository = true
 upload_to_release = false
 repository_url = "https://pypi.pkg.github.com/venoajie"
-# --- START CORRECTION ---
-# This is the definitive fix. It tells semantic-release how to create
-# the first version when no previous tags are found.
+# This setting is crucial for correct versioning before 1.0.0.
+# It ensures 'feat' commits result in a minor bump (0.1.0 -> 0.2.0).
 major_on_zero = true
-# --- END CORRECTION ---
 
 
 # Configuration for the Ruff linter and formatter.
