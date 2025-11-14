@@ -9,7 +9,7 @@
 #    - Runs unit tests with Pytest and enforces a 95% coverage minimum.
 # 2. On Push to `main` (after a PR is merged):
 #    - Performs all the above checks.
-#    - If checks pass, it uses the dedicated python-semantic-release action to:
+#    - If checks pass, it directly invokes the semantic-release CLI to:
 #      - Correctly handle the Git environment and tag history.
 #      - Determine the next semantic version, tag, and create a GitHub Release.
 #      - Build and publish the package to the configured GitHub Packages registry.
@@ -77,16 +77,25 @@ jobs:
         with:
           fetch-depth: 0
 
-      # --- START CORRECTION ---
-      # This is the final, definitive configuration.
-      - name: Perform Semantic Release and Publish
-        uses: relekang/python-semantic-release@v9
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          # The github_token is used by the action to create GitHub Releases.
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          python-version: '3.12'
+      
+      - name: Install release dependencies
+        run: python -m pip install python-semantic-release build
+
+      # --- START CORRECTION ---
+      # This is the final, definitive configuration. It removes the problematic
+      # third-party action and invokes the semantic-release tool directly,
+      # giving us full control over the environment.
+      - name: Perform Semantic Release and Publish
+        run: semantic-release publish
         env:
-          # These environment variables are used by `twine` (inside the action)
-          # to authenticate and publish the package to the GitHub Package Registry.
+          # This token is used by semantic-release to create the GitHub Release.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # These variables are used by twine (called by semantic-release) to
+          # authenticate and publish the package to the registry.
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
       # --- END CORRECTION ---
