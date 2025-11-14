@@ -76,20 +76,13 @@ jobs:
 
     steps:
       # --- START CORRECTION ---
-      # This robust checkout procedure ensures the runner is on the main branch
-      # and has a complete history with all tags, solving the "detached HEAD" issue.
+      # Explicitly provide the token to the checkout action. This ensures it
+      # has the correct permissions to see all repository objects, including tags.
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: main # Explicitly check out the main branch
-          fetch-depth: 0 # Ensure all history is available
-          
-      - name: 🔬 [DIAGNOSTIC] Verify Git State
-        run: |
-          echo "--- Current Branch ---"
-          git branch --show-current
-          echo "--- Available Tags ---"
-          git tag -l
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
       # --- END CORRECTION ---
 
       - name: Set up Python
