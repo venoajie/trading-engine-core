@@ -1,0 +1,64 @@
+
+# .github/workflows/debug-publish.yml
+#
+# A temporary, manually-triggered workflow to diagnose the `twine upload` failure
+# with maximum verbosity.
+
+name: Debug Package Publication
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug-upload:
+    name: Run Diagnostic Uploads
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip build twine
+
+      - name: Build package for test
+        run: python -m build
+
+      - name: Run Diagnostic Uploads
+        env:
+          # Use the standard token-based authentication
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          
+          # The GITHUB_TOKEN for curl
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "========================================================================="
+          echo "DIAGNOSTIC 1: Running twine upload with maximum verbosity"
+          echo "========================================================================="
+          # The --verbose flag will give us detailed output from twine itself.
+          twine upload --verbose --repository-url https://pypi.pkg.github.com/${{ github.repository_owner }} dist/*
+          
+          echo "========================================================================="
+          echo "DIAGNOSTIC 2: Replicating upload with raw curl"
+          echo "This test bypasses twine entirely to check the underlying HTTP request."
+          echo "========================================================================="
+          # Find the built wheel file to upload
+          WHEEL_FILE=$(find dist -name "*.whl")
+          echo "Found wheel file: $WHEEL_FILE"
+          
+          # The target URL for a raw upload
+          TARGET_URL="https://pypi.pkg.github.com/${{ github.repository }}/"
+          echo "Target URL: $TARGET_URL"
+          
+          # The -v flag provides verbose output of the entire HTTP transaction.
+          # The -T flag uploads the specified file.
+          # The -u flag provides the Basic Auth credentials.
+          curl -v -T "$WHEEL_FILE" -u "__token__:$GH_TOKEN" "$TARGET_URL"
