@@ -2,8 +2,9 @@
 # .github/workflows/python-publish.yml
 #
 # Definitive CI/CD pipeline for shared Python libraries.
-# This workflow contains an explicit, robust bootstrap sequence for the
-# first release, and a fully automated sequence for all subsequent releases.
+# NOTE: This workflow requires a one-time manual configuration in the
+# repository settings (Settings > Packages > Actions permissions > Read and Write)
+# to grant the necessary permissions for the initial package publication.
 
 name: Python Package CI/CD
 
@@ -84,15 +85,12 @@ jobs:
       - name: Bootstrap Initial Release or Publish New Version
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # For twine, the password is the GitHub token. The username can be the actor's name or __token__.
           TWINE_USERNAME: ${{ github.actor }}
           TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Check if any tags exist in the repository.
           LATEST_TAG=$(git describe --tags --abbrev=0 || true)
 
           if [ -z "$LATEST_TAG" ]; then
-            # NO TAGS EXIST: This is the definitive bootstrap sequence.
             echo "No tags found. Bootstrapping initial release v0.1.0."
             
             # Step 1: Tag and push to remote.
@@ -102,17 +100,18 @@ jobs:
             # Step 2: Build the package distributions.
             python -m build
 
-            # Step 3: Publish the distributions to GitHub Packages registry using twine.
-            # This is the critical step that populates the "Packages" section.
-            twine upload --repository-url https://pypi.pkg.github.com/${{ github.repository_owner }} dist/*
+            # Step 3: Check distributions for validity.
+            twine check dist/*
 
-            # Step 4: Create the corresponding GitHub Release for discoverability.
+            # Step 4: Publish to GitHub Packages registry with verbose logging.
+            twine upload --verbose --repository-url https://pypi.pkg.github.com/${{ github.repository_owner }} dist/*
+
+            # Step 5: Create the corresponding GitHub Release.
             gh release create v0.1.0 --notes "Initial release"
 
-            # Step 5: (Optional but recommended) Upload assets to the release page.
+            # Step 6: Upload assets to the release page for discoverability.
             gh release upload v0.1.0 dist/*
           else
-            # TAGS EXIST: Let semantic-release handle the fully automated process.
             echo "Tags found. Running standard publish."
             semantic-release publish
           fi
