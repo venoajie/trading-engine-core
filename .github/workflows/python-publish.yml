@@ -77,16 +77,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # --- START CORRECTION ---
-      # This is the definitive fix to ensure the runner has the correct Git state.
-      - name: 🔬 [DIAGNOSTIC] Verify and Correct Git State
-        run: |
-          echo "--- Syncing all tags from remote ---"
-          git fetch --tags
-          echo "--- Tags visible to runner ---"
-          git tag -l
-      # --- END CORRECTION ---
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -95,9 +85,13 @@ jobs:
       - name: Install release dependencies
         run: python -m pip install python-semantic-release build
 
+      # --- START CORRECTION ---
+      # This is the one-time bootstrap command. The --force flag will override
+      # the "no tags found" error and create the initial release.
       - name: Perform Semantic Release and Publish
-        run: semantic-release publish
+        run: semantic-release publish --force
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      # --- END CORRECTION ---
