@@ -50,17 +50,19 @@ dev = [
 # Configuration for python-semantic-release.
 [tool.semantic_release]
 version_variables = ["pyproject.toml:project.version"]
-# --- START CORRECTION ---
-# Make the build command self-sufficient by first installing the `build` package
-# and then running the build. This ensures it works in any minimal environment.
 build_command = "pip install build && python -m build"
-# --- END CORRECTION ---
 commit_parser = "conventional"
 changelog_file = "CHANGELOG.md"
 repository = "github"
 branch = "main"
 upload_to_repository = true
 upload_to_release = false
+# --- START CORRECTION ---
+# Explicitly define the URL for the GitHub Package Registry. This tells
+# the action WHERE to publish the package.
+repository_url = "https://pypi.pkg.github.com/venoajie"
+# --- END CORRECTION ---
+
 
 # Configuration for the Ruff linter and formatter.
 [tool.ruff]
