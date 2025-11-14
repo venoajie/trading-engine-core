@@ -75,16 +75,21 @@ jobs:
       packages: write
 
     steps:
+      # --- START CORRECTION ---
+      # This robust checkout procedure ensures the runner is on the main branch
+      # and has a complete history with all tags, solving the "detached HEAD" issue.
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      # --- START CORRECTION ---
-      # Correctly fetch all tags from the remote without the --unshallow flag,
-      # which is unnecessary when fetch-depth is 0.
-      - name: Fetch all history and tags
-        run: git fetch --prune --tags
+          ref: main # Explicitly check out the main branch
+          fetch-depth: 0 # Ensure all history is available
+          
+      - name: 🔬 [DIAGNOSTIC] Verify Git State
+        run: |
+          echo "--- Current Branch ---"
+          git branch --show-current
+          echo "--- Available Tags ---"
+          git tag -l
       # --- END CORRECTION ---
 
       - name: Set up Python
