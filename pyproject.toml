@@ -51,11 +51,11 @@ dev = [
 # Configuration for python-semantic-release.
 [tool.semantic_release]
 # The location of the version string to be updated.
-version_toml = "pyproject.toml:project.version"
+version_variables = ["pyproject.toml:project.version"]
 # Specifies the command to build the distributable package files.
 build_command = "python -m build"
 # Enforce conventional commit message standards.
-commit_parser = "angular"
+commit_parser = "conventional"
 # Automatically generate release notes in CHANGELOG.md.
 changelog_file = "CHANGELOG.md"
 # Defines which repository provider to use for creating releases (e.g., GitHub).
