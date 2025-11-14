@@ -28,6 +28,9 @@
 
 ### Chores
 
+- Reset and trigger initial release
+  ([`2435718`](https://github.com/venoajie/trading-engine-core/commit/243571840e389bf9a5c05c32e10489a5ecd9b364))
+
 - Trigger final release with corrected pipeline
   ([`a9ddc68`](https://github.com/venoajie/trading-engine-core/commit/a9ddc6856b959279d2f4342d4afed0c8bc77099c))
 
