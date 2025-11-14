@@ -64,7 +64,7 @@ jobs:
           pytest \
             --cov=src \
             --cov-report=xml \
-            --cov-fail-under=95 # Enforces the 95% coverage requirement from Epic 1.1
+            --cov-fail-under=95 # Enforces the 95% coverage requirement
 
   publish:
     name: Publish to GitHub Packages
@@ -94,7 +94,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install build python-semantic-release
 
-      # Separate the build and publish steps for better debugging.
       - name: Build package
         run: python -m build
 
@@ -105,12 +104,10 @@ jobs:
         env:
           # The GITHUB_TOKEN is used for authenticating with the GitHub API.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # --- START CORRECTION ---
           # Provide explicit credentials for Twine (used by semantic-release)
           # to publish the package to the GitHub Package Registry.
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }} # <<< CORRECTED TYPO HERE
           TWINE_REPOSITORY_URL: https://pypi.pkg.github.com/venoajie
-          # --- END CORRECTION ---
         run: |
           semantic-release publish
