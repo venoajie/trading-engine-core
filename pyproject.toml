@@ -65,11 +65,9 @@ repository = "github"
 branch = "main"
 # Enable the upload to the package registry (handled by twine).
 upload_to_repository = true
-# --- START CORRECTION ---
 # Disable uploading the .whl and .tar.gz files as assets to the GitHub Release page.
-# This prevents the 422 error on workflow re-runs.
+# This prevents the 422 error on workflow re-runs and is redundant.
 upload_to_release = false
-# --- END CORRECTION ---
 
 
 # Configuration for the Ruff linter and formatter.
