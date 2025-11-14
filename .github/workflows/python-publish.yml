@@ -1,6 +1,3 @@
-
-**File:** `trading-engine-core/.github/workflows/python-publish.yml`
-```yaml
 # .github/workflows/python-publish.yml
 #
 # Standardized CI/CD pipeline for shared Python libraries.
