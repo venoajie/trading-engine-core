@@ -8,6 +8,9 @@
 - Bootstrap versioning to enable automated releases
   ([`f915841`](https://github.com/venoajie/trading-engine-core/commit/f915841d9c432447ed3ec599e25d3a4ee45ff184))
 
+- Correct syntax and finalize pyproject.toml
+  ([`c7e170e`](https://github.com/venoajie/trading-engine-core/commit/c7e170e646e20e09da8867451b64a8bf09cddce5))
+
 - Correct twine authentication variable in release workflow
   ([`7dc74d1`](https://github.com/venoajie/trading-engine-core/commit/7dc74d1d2fbb20a86ec50557ca734b8a73f4b6ad))
 
