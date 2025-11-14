@@ -9,10 +9,8 @@
 #    - Runs unit tests with Pytest and enforces a 95% coverage minimum.
 # 2. On Push to `main` (after a PR is merged):
 #    - Performs all the above checks.
-#    - If checks pass, it directly invokes the semantic-release CLI to:
-#      - Correctly handle the Git environment and tag history.
-#      - Determine the next semantic version, tag, and create a GitHub Release.
-#      - Build and publish the package to the configured GitHub Packages registry.
+#    - If checks pass, it correctly bootstraps the initial release or
+#      publishes subsequent versions based on conventional commits.
 
 name: Python Package CI/CD
 
@@ -89,17 +87,27 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-      
-      - name: Bootstrap Initial Version Tag (if it doesn't exist)
-        run: |
-          # This step is crucial for the first-ever release.
-          # It creates the initial tag so semantic-release has a starting point.
-          # The `|| true` ensures the command doesn't fail if the tag already exists.
-          git tag v0.1.0 || true
 
-      - name: Perform Semantic Release and Publish
-        run: semantic-release publish
+      - name: Bootstrap Initial Release or Publish New Version
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if any tags exist in the repository.
+          # The `|| true` prevents the script from failing if no tags are found.
+          LATEST_TAG=$(git describe --tags --abbrev=0 || true)
+
+          if [ -z "$LATEST_TAG" ]; then
+            # NO TAGS EXIST: This is the first release.
+            # Force the creation of the initial v0.1.0 release.
+            # This command creates the tag and the GitHub Release object.
+            echo "No tags found. Bootstrapping initial version v0.1.0."
+            semantic-release version --force v0.1.0
+          fi
+
+          # Publish the package.
+          # If the version command just ran, this will publish v0.1.0.
+          # On subsequent runs, this command will calculate the next version
+          # from commits and publish it.
+          semantic-release publish
