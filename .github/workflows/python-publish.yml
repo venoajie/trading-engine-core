@@ -81,18 +81,25 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      
+
       - name: Install release dependencies
         run: python -m pip install python-semantic-release build
 
-      # --- START CORRECTION ---
-      # This is the one-time bootstrap process.
-      - name: Perform Semantic Release and Publish
+      - name: Configure Git for CI/CD
         run: |
-          semantic-release version 0.1.0
-          semantic-release publish
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+      
+      - name: Bootstrap Initial Version Tag (if it doesn't exist)
+        run: |
+          # This step is crucial for the first-ever release.
+          # It creates the initial tag so semantic-release has a starting point.
+          # The `|| true` ensures the command doesn't fail if the tag already exists.
+          git tag v0.1.0 || true
+
+      - name: Perform Semantic Release and Publish
+        run: semantic-release publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-      # --- END CORRECTION ---
