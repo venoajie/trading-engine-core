@@ -105,6 +105,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install build python-semantic-release
 
+      # Separate the build and publish steps for better debugging.
+      - name: Build package
+        run: python -m build
+
+      - name: 📦 [DIAGNOSTIC] Verify build artifacts
+        run: ls -l dist/
+          
       - name: Perform Semantic Release
         env:
           # The GITHUB_TOKEN is automatically provided by GitHub Actions.
