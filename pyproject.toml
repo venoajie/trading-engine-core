@@ -44,11 +44,11 @@ dev = [
 
 # --- Tool Configurations ---
 
-# CORRECTED: This section now correctly maps the `src` directory to the
-# `trading_engine_core` package name. This ensures the built wheel has the
-# correct internal structure required by the package registry.
+# CORRECTED: This uses the `sources` key to correctly map the flat `src`
+# directory to the `trading_engine_core` package name. This is the valid
+# configuration for all build types, including editable installs.
 [tool.hatch.build]
-packages = { "trading_engine_core" = "src" }
+sources = { "trading_engine_core" = "src" }
 
 # Configuration for python-semantic-release.
 [tool.semantic_release]
