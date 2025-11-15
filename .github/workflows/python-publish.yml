@@ -2,7 +2,7 @@
 # .github/workflows/python-publish.yml
 #
 # Definitive CI/CD pipeline for shared Python libraries.
-# This workflow contains the final, correct authentication protocol for twine.
+# This workflow contains the final, correct endpoint URL for twine.
 
 name: Python Package CI/CD
 
@@ -83,7 +83,6 @@ jobs:
       - name: Bootstrap Initial Release or Publish New Version
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # This is the definitive fix. The username must be '__token__'.
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -99,7 +98,8 @@ jobs:
             
             twine check dist/*
             
-            twine upload --verbose --repository-url https://pypi.pkg.github.com/${{ github.repository_owner }} dist/*
+            # This is the definitive fix. The URL must be scoped to the repository.
+            twine upload --verbose --repository-url https://pypi.pkg.github.com/${{ github.repository }} dist/*
 
             gh release create v0.1.0 --notes "Initial release"
             

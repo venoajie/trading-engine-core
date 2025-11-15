@@ -9,8 +9,6 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-# This is the definitive fix. For a personal account, the package name
-# MUST NOT be scoped with the username.
 name = "trading-engine-core"
 version = "0.1.0"
 authors = [
@@ -59,7 +57,8 @@ repository = "github"
 branch = "main"
 upload_to_repository = true
 upload_to_release = false
-repository_url = "https://pypi.pkg.github.com/venoajie"
+# This is the definitive fix. The URL must be scoped to the repository.
+repository_url = "https://pypi.pkg.github.com/venoajie/trading-engine-core"
 major_on_zero = true
 
 
