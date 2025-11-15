@@ -1,6 +1,6 @@
 
 # .github/workflows/python-publish.yml
-# FINAL VERSION - Uses a Personal Access Token (PAT) for authentication.
+# FINAL DEBUGGING VERSION - Forces a new release with verbose logging.
 
 name: Python Package CI/CD
 
@@ -48,7 +48,7 @@ jobs:
     name: Publish to GitHub Packages
     needs: validate
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event.name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
       packages: write
@@ -67,11 +67,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      - name: Publish new version
+      - name: Publish new version (Forced & Verbose)
         env:
-          # Use the PAT for all GitHub API interactions.
           GH_TOKEN: ${{ secrets.GH_PAT }}
-          # Explicitly set Twine credentials to use the PAT.
-          TWINE_USERNAME: venoajie # When using a PAT, the username is the account owner.
+          TWINE_USERNAME: venoajie
           TWINE_PASSWORD: ${{ secrets.GH_PAT }}
-        run: semantic-release publish
+        run: semantic-release publish --verbose --force-new-release
