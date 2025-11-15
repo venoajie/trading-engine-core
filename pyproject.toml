@@ -17,7 +17,8 @@ authors = [
 description = "Core data contracts, models, and protocols for the trading engine."
 readme = "README.md"
 requires-python = ">=3.12"
-license = { text = "Proprietary" }
+# CORRECTED: The license field is now a simple string to resolve the deprecation warning.
+license = "Proprietary"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
@@ -31,7 +32,6 @@ dependencies = [
 "Homepage" = "https://github.com/venoajie/trading-engine-core"
 "Repository" = "https://github.com/venoajie/trading-engine-core"
 
-# Defines optional dependencies for development, testing, and releasing.
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
@@ -39,24 +39,20 @@ dev = [
     "ruff>=0.4",
     "python-semantic-release>=9.0",
     "build>=1.0",
-    # We no longer need hatchling here
     "setuptools",
-    "wheel", # Add wheel for semantic-release build command
-    "twine", # Add twine for semantic-release upload
+    "wheel",
+    "twine",
 ]
 
 # --- Tool Configurations ---
 
-# CORRECTED: This section provides the explicit instructions setuptools needs.
-# It finds all packages within the `src` directory and correctly maps the root
-# of the project for package discovery.
-[tool.setuptools]
-packages = ["trading_engine_core"]
-package-dir = { "" = "src" }
+# CORRECTED: This is the canonical way to configure a "flat-src" layout with setuptools.
+# The `find` directive automatically discovers all packages within the `src` directory,
+# resolving the "package directory does not exist" error.
+[tool.setuptools.packages.find]
+where = ["src"]
 
 # Configuration for python-semantic-release.
-# NOTE: The build command is updated to use the standard `build` module,
-# which will respect the setuptools backend.
 [tool.semantic_release]
 version_variables = ["pyproject.toml:project.version"]
 build_command = "pip install build && python -m build"
