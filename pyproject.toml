@@ -59,8 +59,8 @@ repository = "github"
 branch = "main"
 upload_to_repository = true
 upload_to_release = false
-# This is the definitive fix. The URL must be scoped to the repository.
-repository_url = "https://pypi.pkg.github.com/venoajie/trading-engine-core"
+# CORRECTED: The URL must be scoped to the repository OWNER.
+repository_url = "https://pypi.pkg.github.com/venoajie"
 major_on_zero = true
 
 
