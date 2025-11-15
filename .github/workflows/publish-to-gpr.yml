@@ -60,9 +60,19 @@ jobs:
           name: python-package-dists
           path: dist/
 
-      - name: Publish package to GitHub Packages
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Set up Python for publishing
+        uses: actions/setup-python@v5
         with:
-          user: __token__
-          password: ${{ secrets.GITHUB_TOKEN }}
-          repository-url: https://pypi.pkg.github.com/${{ github.repository_owner }}
+          python-version: '3.12'
+
+      - name: Install twine
+        run: python -m pip install --upgrade twine
+
+      - name: Publish package to GitHub Packages
+        env:
+          # Use __token__ as the username for token authentication
+          TWINE_USERNAME: __token__
+          # The GITHUB_TOKEN is automatically generated and scoped to the repository
+          TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          twine upload --repository-url https://pypi.pkg.github.com/${{ github.repository_owner }} dist/*

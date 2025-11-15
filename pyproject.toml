@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trading-engine-core"
-version = "0.1.3"
+version = "0.1.4"
 authors = [
     { name = "Trading Systems Team", email = "ven.ajie@protonmail.com" },
 ]
