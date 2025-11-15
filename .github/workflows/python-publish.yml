@@ -73,7 +73,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install release dependencies
-        run: python -m pip install --upgrade pip python-semantic-release build hatchling twine
+        run: python -m pip install --upgrade pip python-semantic-release build twine
 
       - name: Configure Git for CI/CD
         run: |
@@ -90,19 +90,19 @@ jobs:
 
           if [ -z "$LATEST_TAG" ]; then
             echo "No tags found. Bootstrapping initial release v0.1.0."
-
+            
             git tag v0.1.0
             git push origin v0.1.0
-
+            
             python -m build
-
+            
             twine check dist/*
-
-            # CORRECTED: The URL must be scoped to the repository owner.
-            twine upload --verbose --repository-url https://pypi.pkg.github.com/${{ github.repository_owner }} dist/*
+            
+            # This is the definitive fix. The URL must be scoped to the repository.
+            twine upload --verbose --repository-url https://pypi.pkg.github.com/${{ github.repository }} dist/*
 
             gh release create v0.1.0 --notes "Initial release"
-
+            
             gh release upload v0.1.0 dist/*
           else
             echo "Tags found. Running standard publish."
