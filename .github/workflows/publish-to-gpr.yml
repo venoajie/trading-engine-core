@@ -1,0 +1,68 @@
+
+# .github/workflows/publish-to-gpr.yml
+
+name: Publish Python Package to GPR
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev]
+
+      - name: Lint with ruff
+        run: |
+          ruff check .
+
+      - name: Test with pytest
+        run: |
+          pytest
+
+      - name: Build package
+        run: python -m build
+
+      - name: Store distribution package
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-dists
+          path: dist/
+
+  publish-to-gpr:
+    name: Publish to GitHub Packages
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Download distribution package
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-dists
+          path: dist/
+
+      - name: Publish package to GitHub Packages
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository_url: https://pypi.pkg.github.com/${{ github.repository_owner }}
+          # The GITHUB_TOKEN is automatically generated and scoped to the repository.
+          # No manual secret configuration is required.
