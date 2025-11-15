@@ -49,9 +49,8 @@ jobs:
     name: Publish to GitHub Packages
     needs: build-and-test
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+    # The permissions key is not needed here as we are using a PAT
+    # with its own embedded permissions.
 
     steps:
       - name: Download distribution package
@@ -70,9 +69,9 @@ jobs:
 
       - name: Publish package to GitHub Packages
         env:
-          # Use __token__ as the username for token authentication
-          TWINE_USERNAME: __token__
-          # The GITHUB_TOKEN is automatically generated and scoped to the repository
-          TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          # The username can be your GitHub username or __token__
+          TWINE_USERNAME: ${{ github.repository_owner }}
+          # Use the PAT stored in the repository secret
+          TWINE_PASSWORD: ${{ secrets.GPR_TOKEN }}
         run: |
           twine upload --repository-url https://pypi.pkg.github.com/${{ github.repository_owner }} dist/*
