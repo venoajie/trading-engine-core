@@ -41,5 +41,52 @@ dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
     "ruff>=0.4",
+    "python-semantic-release>=9.0",
     "build>=1.0",
+]
+
+# --- Tool Configurations ---
+
+# Configuration for python-semantic-release.
+[tool.semantic_release]
+version_variables = ["pyproject.toml:project.version"]
+build_command = "pip install build && python -m build"
+commit_parser = "conventional"
+changelog_file = "CHANGELOG.md"
+repository = "github"
+branch = "main"
+upload_to_repository = true
+upload_to_release = true
+# THIS IS THE CRITICAL FIX: The URL must point to the repository, not just the owner.
+repository_url = "https://pypi.pkg.github.com/venoajie/trading-engine-core"
+major_on_zero = true
+
+
+# Configuration for the Ruff linter and formatter.
+[tool.ruff]
+line-length = 88
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
+
+# Configuration for Pytest.
+[tool.pytest.ini_options]
+addopts = "--cov=src --cov-report=term-missing"
+testpaths = [
+    "tests",
 ]
