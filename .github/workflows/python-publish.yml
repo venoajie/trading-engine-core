@@ -73,7 +73,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install release dependencies
-        run: python -m pip install --upgrade pip python-semantic-release build twine
+        run: python -m pip install --upgrade pip python-semantic-release build hatchling twine
 
       - name: Configure Git for CI/CD
         run: |

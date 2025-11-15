@@ -5,8 +5,8 @@
 # using the setuptools build backend.
 
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "trading-engine-core"
@@ -32,8 +32,9 @@ dependencies = [
 "Repository" = "https://github.com/venoajie/trading-engine-core"
 
 # Specifies the directory where the package source code resides.
-[tool.setuptools.packages.find]
-where = ["src"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/trading_engine_core"]
 
 # Defines optional dependencies for development, testing, and releasing.
 [project.optional-dependencies]
@@ -43,6 +44,7 @@ dev = [
     "ruff>=0.4",
     "python-semantic-release>=9.0",
     "build>=1.0",
+    "hatchling",
 ]
 
 # --- Tool Configurations ---
@@ -50,7 +52,7 @@ dev = [
 # Configuration for python-semantic-release.
 [tool.semantic_release]
 version_variables = ["pyproject.toml:project.version"]
-build_command = "pip install build && python -m build"
+build_command = "pip install build hatchling && python -m build"
 commit_parser = "conventional"
 changelog_file = "CHANGELOG.md"
 repository = "github"
