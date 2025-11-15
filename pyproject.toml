@@ -2,11 +2,11 @@
 # pyproject.toml
 #
 # This file serves as the central configuration for the Python project,
-# using the setuptools build backend.
+# now using the setuptools build backend.
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "trading-engine-core"
@@ -39,28 +39,33 @@ dev = [
     "ruff>=0.4",
     "python-semantic-release>=9.0",
     "build>=1.0",
-    "hatchling",
+    # We no longer need hatchling here
+    "setuptools",
+    "wheel", # Add wheel for semantic-release build command
+    "twine", # Add twine for semantic-release upload
 ]
 
 # --- Tool Configurations ---
 
-# CORRECTED: This is the definitive and architecturally correct way to handle a
-# "flat-src" layout with hatchling. The `sources` key globally maps the `src`
-# directory to the `trading_engine_core` package name for all build targets.
-[tool.hatch.build]
-sources = { "trading_engine_core" = "src" }
+# CORRECTED: This section provides the explicit instructions setuptools needs.
+# It finds all packages within the `src` directory and correctly maps the root
+# of the project for package discovery.
+[tool.setuptools]
+packages = ["trading_engine_core"]
+package-dir = { "" = "src" }
 
 # Configuration for python-semantic-release.
+# NOTE: The build command is updated to use the standard `build` module,
+# which will respect the setuptools backend.
 [tool.semantic_release]
 version_variables = ["pyproject.toml:project.version"]
-build_command = "pip install build hatchling && python -m build"
+build_command = "pip install build && python -m build"
 commit_parser = "conventional"
 changelog_file = "CHANGELOG.md"
 repository = "github"
 branch = "main"
 upload_to_repository = true
 upload_to_release = false
-# The URL must be scoped to the repository OWNER.
 repository_url = "https://pypi.pkg.github.com/venoajie"
 major_on_zero = true
 
