@@ -44,11 +44,12 @@ dev = [
 
 # --- Tool Configurations ---
 
-# CORRECTED: This target-specific configuration explicitly tells the wheel
-# builder to create the `trading_engine_core` package from the contents
-# of the `src` directory, resolving the build failure.
+# CORRECTED: This target-specific configuration uses the `packages` key
+# with a dictionary to correctly map the `src` directory to the
+# `trading_engine_core` package name for the wheel build. This is the
+# definitive fix for the build and editable install failures.
 [tool.hatch.build.targets.wheel]
-sources = { "trading_engine_core" = "src" }
+packages = { "trading_engine_core" = "src" }
 
 # Configuration for python-semantic-release.
 [tool.semantic_release]
