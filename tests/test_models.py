@@ -1,9 +1,12 @@
+
+# tests/test_models.py
+
 import json
 from datetime import datetime
 
 import pytest
 from pydantic import ValidationError
-from src.models import (
+from trading_engine_core.models import (
     CycleClosedEvent,
     CycleCreatedEvent,
     OrderFilledEvent,
