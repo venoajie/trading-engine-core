@@ -56,9 +56,9 @@ changelog_file = "CHANGELOG.md"
 repository = "github"
 branch = "main"
 upload_to_repository = true
-upload_to_release = true # Set to true to also upload artifacts to the GitHub Release
-# This is the definitive fix. The URL must be scoped to the repository.
-repository_url = "https://pypi.pkg.github.com/venoajie" # The URL should point to the owner, not the repo.
+upload_to_release = true
+# THIS IS THE CRITICAL FIX: The URL must point to the repository, not just the owner.
+repository_url = "https://pypi.pkg.github.com/venoajie/trading-engine-core"
 major_on_zero = true
 
 
