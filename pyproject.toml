@@ -44,11 +44,11 @@ dev = [
 
 # --- Tool Configurations ---
 
-# CORRECTED: The package-to-directory mapping is a global build instruction
-# and belongs in the `[tool.hatch.build]` table. This is the definitive
-# syntax for handling a "flat-src" layout.
+# CORRECTED: This is the definitive and architecturally correct way to handle a
+# "flat-src" layout with hatchling. The `sources` key globally maps the `src`
+# directory to the `trading_engine_core` package name for all build targets.
 [tool.hatch.build]
-packages = { "trading_engine_core" = "src" }
+sources = { "trading_engine_core" = "src" }
 
 # Configuration for python-semantic-release.
 [tool.semantic_release]
