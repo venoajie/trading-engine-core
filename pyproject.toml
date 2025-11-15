@@ -31,11 +31,6 @@ dependencies = [
 "Homepage" = "https://github.com/venoajie/trading-engine-core"
 "Repository" = "https://github.com/venoajie/trading-engine-core"
 
-# Specifies the directory where the package source code resides.
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/trading_engine_core"]
-
 # Defines optional dependencies for development, testing, and releasing.
 [project.optional-dependencies]
 dev = [
@@ -49,6 +44,11 @@ dev = [
 
 # --- Tool Configurations ---
 
+# CORRECTED: This section correctly maps the flat 'src' directory 
+# to the 'trading_engine_core' package name, ensuring a well-formed build artifact.
+[tool.hatch.build]
+packages = ["src"]
+
 # Configuration for python-semantic-release.
 [tool.semantic_release]
 version_variables = ["pyproject.toml:project.version"]
@@ -59,7 +59,7 @@ repository = "github"
 branch = "main"
 upload_to_repository = true
 upload_to_release = false
-# CORRECTED: The URL must be scoped to the repository OWNER.
+# The URL must be scoped to the repository OWNER.
 repository_url = "https://pypi.pkg.github.com/venoajie"
 major_on_zero = true
 
