@@ -1,0 +1,155 @@
+
+# src/trading_engine_core/ohlc/manager.py
+import asyncio
+from datetime import datetime, timezone
+from loguru import logger as log
+from typing import List, Dict, Any, Type
+
+from shared_db_clients.postgres_client import PostgresClient
+from shared_db_clients.redis_client import CustomRedisClient
+from shared_config.config import settings
+# ARCHITECTURAL REFACTOR: The manager should not know about specific clients.
+# It will receive a map of clients from the service that uses it.
+# from src.services.janitor.registry import CLIENT_MAP
+
+class OhlcManager:
+    def __init__(self, db_client: PostgresClient, redis_client: CustomRedisClient):
+        self.db = db_client
+        self.redis = redis_client
+        if not settings.backfill: raise ValueError("Backfill settings not configured.")
+        self.resolutions = settings.backfill.resolutions
+        self.target_candles = settings.backfill.bootstrap_target_candles
+        self.backfill_whitelist = settings.backfill.ohlc_backfill_whitelist
+
+    async def discover_and_queue_work(self, exchange_name: str):
+
+        log.info(f"[{exchange_name}] Starting OHLC work discovery...")
+        if not self.backfill_whitelist:
+            log.warning(f"[{exchange_name}] OHLC backfill whitelist is empty. Skipping.")
+            return
+        now_utc = datetime.now(timezone.utc)
+        tasks_added = 0
+        log.info(f"[{exchange_name}] Checking against whitelist: {self.backfill_whitelist}")
+        conn = await self.db.get_pool()
+        for instrument_name in self.backfill_whitelist:
+            instrument_details = await conn.fetchrow("SELECT market_type FROM instruments WHERE exchange = $1 AND instrument_name = $2", exchange_name, instrument_name)
+            if not instrument_details:
+                log.warning(f"Instrument '{instrument_name}' not in DB for '{exchange_name}'. Skipping.")
+                continue
+            market_type = instrument_details["market_type"]
+            for res_str in self.resolutions:
+                res_str = str(res_str)
+                res_td = self.db._parse_resolution_to_timedelta(res_str)
+                latest_db_tick = await self.db.fetch_latest_ohlc_timestamp(exchange_name, instrument_name, res_td)
+                work_item = None
+                if latest_db_tick is None:
+                    end_ts = int(now_utc.timestamp() * 1000)
+                    start_ts = int((now_utc - (self.target_candles * res_td)).timestamp() * 1000)
+                    work_item = {"type": "BOOTSTRAP", "exchange": exchange_name, "instrument": instrument_name, "market_type": market_type, "resolution": res_str, "start_ts": start_ts, "end_ts": end_ts}
+                else:
+                    next_expected_tick = latest_db_tick + res_td
+                    if next_expected_tick < now_utc:
+                        start_ts = int(next_expected_tick.timestamp() * 1000)
+                        end_ts = int(now_utc.timestamp() * 1000)
+                        work_item = {"type": "GAP_FILL", "exchange": exchange_name, "instrument": instrument_name, "market_type": market_type, "resolution": res_str, "start_ts": start_ts, "end_ts": end_ts}
+                if work_item:
+                    await self.redis.enqueue_ohlc_work(work_item)
+                    tasks_added += 1
+        log.success(f"[{exchange_name}] OHLC work discovery complete. Enqueued {tasks_added} tasks.")
+
+
+    async def run_worker(self, worker_id: int, client_map: Dict[str, Type]): # REFACTORED
+        log.info(f"[Worker-{worker_id}] Starting...")
+        api_client = None
+        try:
+            while True:
+                work_item = await self.redis.dequeue_ohlc_work()
+                if work_item is None:
+                    await asyncio.sleep(5)
+                    continue
+                if not isinstance(work_item, dict):
+                    log.error(f"Invalid work item type: {type(work_item)}. Skipping.")
+                    continue
+                work_type = work_item.get("type", "UNKNOWN")
+                required_fields = ["exchange", "instrument", "resolution", "start_ts", "end_ts"]
+                if not all(field in work_item for field in required_fields):
+                    log.error(f"Invalid work item: Missing fields. Item: {work_item}")
+                    continue
+                log.info(f"[Worker-{worker_id}] Processing task: {work_type} for {work_item.get('instrument')} ({work_item.get('resolution')})")
+                try:
+                    exchange_name = work_item["exchange"]
+                    client_class = client_map.get(exchange_name) # REFACTORED
+                    if not client_class:
+                        log.error(f"No client found for exchange '{exchange_name}'. Skipping.")
+                        continue
+                    exchange_config = settings.exchanges.get(exchange_name)
+                    if not exchange_config:
+                        log.error(f"No config found for exchange '{exchange_name}'. Skipping.")
+                        continue
+                    api_client = client_class(exchange_config.model_dump())
+                    await api_client.connect()
+                    await self._perform_paginated_ohlc_fetch(work_item, api_client)
+                    await api_client.close()
+                    api_client = None
+                except Exception as e:
+                    log.error(f"[Worker-{worker_id}] Failed to process task: {work_item}. Error: {e}", exc_info=True)
+                    await self.redis.enqueue_failed_ohlc_work(work_item)
+                    if api_client: await api_client.close(); api_client = None
+                    continue
+        except asyncio.CancelledError:
+            log.info(f"[Worker-{worker_id}] Cancelled.")
+        except Exception as e:
+            log.critical(f"[Worker-{worker_id}] Exited with unexpected error: {repr(e)}", exc_info=True)
+        finally:
+            if api_client: await api_client.close()
+    
+    async def _perform_paginated_ohlc_fetch(self, work_item: Dict[str, Any], api_client):
+
+        exchange_name, instrument_name, res_str, start_ts, end_ts, market_type = work_item["exchange"], work_item["instrument"], str(work_item["resolution"]), work_item["start_ts"], work_item["end_ts"], work_item["market_type"]
+        log.info(f"Executing paginated fetch for {instrument_name} ({res_str}) from {start_ts} to {end_ts}")
+        current_start_ts = start_ts
+        total_records_upserted = 0
+        resolution_td = self.db._parse_resolution_to_timedelta(res_str)
+        chunk_advance_ms = int(1000 * resolution_td.total_seconds() * 1000)
+        while current_start_ts < end_ts:
+            current_end_ts = min(end_ts, current_start_ts + chunk_advance_ms)
+            log.debug(f"Fetching chunk for {instrument_name}: {current_start_ts} -> {current_end_ts}")
+            response = await api_client.get_historical_ohlc(instrument_name, current_start_ts, current_end_ts, res_str, market_type)
+            if not response or not response.get("ticks"):
+                log.warning(f"API call for {instrument_name} returned no data for this chunk. Advancing.")
+                current_start_ts = current_end_ts + 1
+                await asyncio.sleep(0.2)
+                continue
+            new_records = self._transform_tv_data_to_ohlc_records(response, exchange_name, instrument_name, res_str)
+            if not new_records:
+                log.debug(f"No new records transformed for {instrument_name}. Advancing.")
+                current_start_ts = current_end_ts + 1
+                await asyncio.sleep(0.2)
+                continue
+            await self.db.bulk_upsert_ohlc(new_records)
+            total_records_upserted += len(new_records)
+            last_tick_ms = new_records[-1]["tick"]
+            current_start_ts = last_tick_ms + 1
+            await asyncio.sleep(0.2)
+        log.success(f"Paginated fetch for {instrument_name} ({res_str}) complete. Upserted {total_records_upserted} records.")
+
+    def _transform_tv_data_to_ohlc_records(self, tv_data: Dict[str, Any], exchange_name: str, instrument_name: str, resolution_str: str) -> List[Dict[str, Any]]:
+
+        records = []
+        try:
+            if not isinstance(tv_data, dict):
+                log.error(f"Invalid TV data type for {instrument_name}: {type(tv_data)}")
+                return []
+            ticks, opens, highs, lows, closes, volumes = tv_data.get("ticks", []), tv_data.get("open", []), tv_data.get("high", []), tv_data.get("low", []), tv_data.get("close", []), tv_data.get("volume", [])
+            if not all(isinstance(lst, list) for lst in [ticks, opens, highs, lows, closes, volumes]):
+                log.error(f"API returned non-list data for {instrument_name}. Skipping chunk.")
+                return []
+            if not (len(ticks) == len(opens) == len(highs) == len(lows) == len(closes) == len(volumes)):
+                log.error(f"Mismatched OHLC array lengths for {instrument_name}. Skipping chunk.")
+                return []
+            for i, tick_ms in enumerate(ticks):
+                records.append({"exchange": exchange_name, "instrument_name": instrument_name, "resolution": resolution_str, "tick": tick_ms, "open": opens[i], "high": highs[i], "low": lows[i], "close": closes[i], "volume": volumes[i], "open_interest": None})
+        except (TypeError, IndexError) as e:
+            log.error(f"Error processing API data for {instrument_name}: {e}", exc_info=True)
+            return []
+        return records
