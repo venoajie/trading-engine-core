@@ -1,102 +1,133 @@
 
-# trading-engine-core/src/trading_engine_core/models.py
+# ~/trading-engine-core/src/trading_engine_core/models.py
 
 from datetime import datetime
-from typing import Any, Literal, Optional, List
+from typing import Any, Literal, Optional, List, Dict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
+# --- Base Configuration ---
 
-class MarketDefinition(BaseModel):
+class AppBaseModel(BaseModel):
+    """Base model for all application data contracts."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="ignore" # Default to ignoring extra fields to prevent crashes on API updates
+    )
+
+# --- Configuration Models (Used by shared-config) ---
+
+class MarketDefinition(AppBaseModel):
     """
     Defines the connection and subscription details for a specific market.
-    This is a core data contract used by configuration and service layers.
+    Merged from local and library versions.
     """
-    market_id: str = Field(..., description="Unique identifier for the market, e.g., 'deribit-main'.")
-    exchange: str = Field(..., description="The name of the exchange, e.g., 'deribit'.")
+    market_id: str = Field(..., description="Unique identifier, e.g., 'deribit-main'.")
+    exchange: str = Field(..., description="Exchange name, e.g., 'deribit'.")
     market_type: Literal["spot", "futures", "options"]
-    ws_channels: List[str] = Field(default_factory=list, description="List of WebSocket channels to subscribe to.")
-    ws_base_url: Optional[str] = Field(default=None, description="The base WebSocket URL for the exchange (hydrated at runtime).")
-    rest_base_url: Optional[str] = Field(default=None, description="The base REST API URL for the exchange (hydrated at runtime).")
+    mode: str = Field(default="live", description="Operational mode: 'live', 'paper', 'backtest'.")
+    
+    # Subscription details
+    symbols: List[str] = Field(default_factory=list, description="Specific symbols to subscribe to.")
+    ws_channels: List[str] = Field(default_factory=list, description="Raw WebSocket channel names.")
+    
+    # Hydrated fields (populated at runtime by config loader)
+    ws_base_url: Optional[str] = Field(default=None, description="Hydrated WebSocket URL.")
+    rest_base_url: Optional[str] = Field(default=None, description="Hydrated REST API URL.")
 
 
-# --- Existing Models ---
+# --- Data Stream Models ---
 
-class BaseEvent(BaseModel):
-    """Base model for all trading events."""
+class OHLCModel(AppBaseModel):
+    """Standard Open-High-Low-Close candle data."""
+    tick: int = Field(..., description="Unix timestamp in milliseconds.")
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float
+    open_interest: Optional[float] = None
+    instrument_name: Optional[str] = None
+    resolution: Optional[str] = None
+
+class StreamMessage(AppBaseModel):
+    """Standard wrapper for incoming WebSocket messages."""
+    channel: str
+    exchange: str
+    timestamp: int
+    data: Dict[str, Any]
+
+# --- Trading Entity Models ---
+
+class InstrumentModel(AppBaseModel):
+    """
+    A validated model for a financial instrument.
+    """
+    exchange: str
+    instrument_name: str
+    market_type: str
+    instrument_kind: str
+    base_asset: str
+    quote_asset: str
+    settlement_asset: str
+    settlement_period: Optional[str] = None
+    tick_size: Optional[float] = None
+    contract_size: Optional[float] = None
+    expiration_timestamp: Optional[datetime] = None
+    data: Dict[str, Any] = Field(default_factory=dict, description="Raw exchange payload.")
+
+class OrderModel(AppBaseModel):
+    """
+    Represents the state of an order in the system.
+    """
+    order_id: str
+    instrument_name: str
+    order_state: str
+    direction: str
+    price: float
+    amount: float
+    label: Optional[str] = None
+    trade_id: Optional[str] = None
+    take_profit: Optional[str] = None
+    stop_loss: Optional[str] = None
+    timestamp: int
+    last_update_timestamp: int
+    creation_timestamp: int
+    
+    model_config = ConfigDict(extra="allow")
+
+class MarginCalculationResult(AppBaseModel):
+    """Output of PME/Risk calculations."""
+    initial_margin: float
+    maintenance_margin: float
+    is_valid: bool
+    error_message: Optional[str] = None
+
+# --- Event Sourcing Models (The Immutable Log) ---
+
+class BaseEvent(AppBaseModel):
+    """Abstract base for event-sourced activities."""
     pass
 
 class CycleCreatedEvent(BaseEvent):
-    """
-    Defines the data stored when a new trading cycle is initiated by the engine.
-    This is the first event in any valid cycle.
-    """
-
-    strategy_name: str = Field(
-        ..., description="The name of the strategy that initiated the cycle."
-    )
-    instrument_ticker: str = Field(
-        ..., description="The ticker symbol of the instrument being traded."
-    )
-    initial_parameters: dict[str, Any] = Field(
-        ..., description="A dictionary of strategy-specific parameters at cycle start."
-    )
-
+    strategy_name: str
+    instrument_ticker: str
+    initial_parameters: Dict[str, Any]
 
 class OrderSentEvent(BaseEvent):
-    """
-    Defines the data stored when an order is sent to the broker API.
-    """
-
-    order_id: str = Field(
-        ...,
-        description="The unique identifier for the order, typically from the broker.",
-    )
-    order_type: Literal["MARKET", "LIMIT", "STOP"] = Field(
-        ..., description="The type of order placed."
-    )
-    side: Literal["BUY", "SELL"] = Field(..., description="The side of the order.")
-    quantity: float = Field(
-        ..., description="The quantity of the instrument to be traded."
-    )
-    price: float | None = Field(
-        default=None, description="The price for LIMIT or STOP orders."
-    )
-
+    order_id: str
+    order_type: Literal["MARKET", "LIMIT", "STOP"]
+    side: Literal["BUY", "SELL"]
+    quantity: float
+    price: Optional[float] = None
 
 class OrderFilledEvent(BaseEvent):
-    """
-    Defines the data stored when an order execution confirmation is received.
-    """
-
-    order_id: str = Field(
-        ..., description="The unique identifier of the order that was filled."
-    )
-    fill_price: float = Field(
-        ..., description="The average price at which the order was executed."
-    )
-    fill_quantity: float = Field(..., description="The quantity that was executed.")
-    commission: float = Field(
-        default=0.0, description="The commission paid for the trade."
-    )
-    timestamp: datetime = Field(
-        ..., description="The exact time of the trade execution from the broker."
-    )
-
+    order_id: str
+    fill_price: float
+    fill_quantity: float
+    commission: float = 0.0
+    timestamp: datetime
 
 class CycleClosedEvent(BaseEvent):
-    """
-    Defines the data stored when a trading cycle is concluded.
-    This is the final event in any valid cycle.
-    """
-
-    reason: str = Field(
-        ...,
-        description=(
-            "The reason for closing the cycle (e.g., "
-            "'take_profit_hit', 'manual_close')."
-        ),
-    )
-    final_pnl: float = Field(
-        ..., description="The final realized profit or loss for the entire cycle."
-    )
+    reason: str
+    final_pnl: float
