@@ -131,3 +131,18 @@ class OrderFilledEvent(BaseEvent):
 class CycleClosedEvent(BaseEvent):
     reason: str
     final_pnl: float
+# --- Notification Models ---
+
+class TradeNotification(AppBaseModel):
+    """A structured model for a trade notification."""
+    direction: str
+    amount: float
+    instrument_name: str
+    price: float
+
+class SystemAlert(AppBaseModel):
+    """A structured model for a system-level alert."""
+    component: str
+    event: str
+    details: str
+    severity: Literal["INFO", "WARNING", "CRITICAL"] = "CRITICAL"
