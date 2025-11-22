@@ -27,7 +27,6 @@ def manager():
     mock_config.exchanges = {"deribit": MagicMock()}
 
     # DB Client Mock
-    # Important: Methods like _parse_resolution_to_timedelta are SYNC
     db = MagicMock()
     db.get_pool = AsyncMock()
     db.fetch_latest_ohlc_timestamp = AsyncMock()
@@ -50,10 +49,7 @@ async def test_discover_work_whitelist_empty(manager):
 async def test_discover_work_logic(manager):
     # Setup DB responses
     conn = AsyncMock()
-    # When get_pool is awaited, it returns conn
     manager.db.get_pool.return_value = conn
-
-    # Mock fetchrow (Instrument details)
     conn.fetchrow.return_value = {"market_type": "future"}
 
     # Case 1: Bootstrap (No latest tick)
@@ -67,12 +63,12 @@ async def test_discover_work_logic(manager):
 
 @pytest.mark.asyncio
 async def test_perform_fetch(manager):
-    # Mock client
     client = AsyncMock()
 
-    # Mock Data
-    tv_data = {"ticks": [1000], "open": [1], "high": [1], "low": [1], "close": [1], "volume": [1]}
-    client.get_historical_ohlc.return_value = tv_data
+    # Mock Data - Returns tick 2000 which matches end_ts, stopping loop
+    tv_data = {"ticks": [2000], "open": [1], "high": [1], "low": [1], "close": [1], "volume": [1]}
+    # Use side_effect to return data once, then empty (to break loop if logic persists)
+    client.get_historical_ohlc.side_effect = [tv_data, {}]
 
     work_item = {
         "exchange": "ex",
