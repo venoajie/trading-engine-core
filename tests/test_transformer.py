@@ -1,0 +1,38 @@
+from trading_engine_core.ohlc.transformer import transform_tv_data_to_ohlc_models
+
+
+def test_transformer_success():
+    tv_data = {
+        "ticks": [1000, 2000],
+        "open": [1, 2],
+        "high": [3, 4],
+        "low": [0, 1],
+        "close": [2, 3],
+        "volume": [10, 20],
+    }
+    models = transform_tv_data_to_ohlc_models(tv_data, "ex", "inst", "1m")
+    assert len(models) == 2
+    assert models[0].tick == 1000
+    assert models[1].close == 3
+
+
+def test_transformer_invalid_input():
+    # Not a dict
+    assert transform_tv_data_to_ohlc_models("bad", "ex", "i", "1") == []
+
+    # Mismatched lengths
+    tv_bad = {
+        "ticks": [1],
+        "open": [1, 2],  # Length 2
+        "high": [1],
+        "low": [1],
+        "close": [1],
+        "volume": [1],
+    }
+    assert transform_tv_data_to_ohlc_models(tv_bad, "ex", "i", "1") == []
+
+
+def test_transformer_missing_keys():
+    # Missing 'open'
+    tv_missing = {"ticks": [1]}
+    assert transform_tv_data_to_ohlc_models(tv_missing, "ex", "i", "1") == []

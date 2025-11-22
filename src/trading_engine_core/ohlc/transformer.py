@@ -1,22 +1,23 @@
-
 # src/trading_engine_core/ohlc/transformer.py
 
-from typing import List, Dict, Any
+from typing import Any
+
 from loguru import logger as log
 
 from trading_engine_core.models import OHLCModel
 
+
 def transform_tv_data_to_ohlc_models(
-    tv_data: Dict[str, Any],
+    tv_data: dict[str, Any],
     exchange_name: str,
     instrument_name: str,
     resolution_str: str,
-) -> List[OHLCModel]:
+) -> list[OHLCModel]:
     """
     Transforms TradingView-style chart data into a list of canonical, validated
     OHLCModel Pydantic objects. This is the single source of truth for this transformation.
     """
-    records: List[OHLCModel] = []
+    records: list[OHLCModel] = []
     try:
         if not isinstance(tv_data, dict):
             log.error(f"Invalid TV data type for {instrument_name}: {type(tv_data)}")
@@ -29,16 +30,11 @@ def transform_tv_data_to_ohlc_models(
         closes = tv_data.get("close", [])
         volumes = tv_data.get("volume", [])
 
-        if not all(
-            isinstance(lst, list)
-            for lst in [ticks, opens, highs, lows, closes, volumes]
-        ):
+        if not all(isinstance(lst, list) for lst in [ticks, opens, highs, lows, closes, volumes]):
             log.error(f"API returned non-list data for {instrument_name}. Skipping chunk.")
             return []
 
-        if not (
-            len(ticks) == len(opens) == len(highs) == len(lows) == len(closes) == len(volumes)
-        ):
+        if not (len(ticks) == len(opens) == len(highs) == len(lows) == len(closes) == len(volumes)):
             log.error(
                 f"Mismatched OHLC array lengths for {instrument_name}. "
                 f"Ticks: {len(ticks)}, Opens: {len(opens)}, etc. Skipping chunk."

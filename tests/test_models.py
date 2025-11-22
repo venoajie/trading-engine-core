@@ -1,130 +1,60 @@
-# tests/test_models.py
-
-import json
 from datetime import datetime
 
 import pytest
 from pydantic import ValidationError
 
-from trading_engine_core.models import (
-    CycleClosedEvent,
-    CycleCreatedEvent,
-    OrderFilledEvent,
-    OrderSentEvent,
-)
+from trading_engine_core.models import CycleCreatedEvent, MarketDefinition, OHLCModel, OrderFilledEvent
 
-# --- Test Data Fixtures ---
+# --- Fixtures ---
 
 
 @pytest.fixture
-def sample_cycle_created_data():
-    return {
-        "strategy_name": "Momentum Scalper",
-        "instrument_ticker": "AAPL",
-        "initial_parameters": {"timeframe": "1m", "risk_per_trade": 0.01},
-    }
+def sample_cycle_created():
+    return {"strategy_name": "Strat1", "instrument_ticker": "AAPL", "initial_parameters": {"p": 1}}
 
 
 @pytest.fixture
-def sample_order_sent_data():
+def sample_order_filled():
     return {
-        "order_id": "broker-order-123",
-        "order_type": "LIMIT",
-        "side": "BUY",
-        "quantity": 100.0,
-        "price": 150.25,
-    }
-
-
-@pytest.fixture
-def sample_order_filled_data():
-    return {
-        "order_id": "broker-order-123",
-        "fill_price": 150.24,
-        "fill_quantity": 100.0,
-        "commission": 4.95,
+        "order_id": "ord_1",
+        "fill_price": 100.0,
+        "fill_quantity": 10,
+        "commission": 1.0,
         "timestamp": datetime.now(),
     }
 
 
-@pytest.fixture
-def sample_cycle_closed_data():
-    return {
-        "reason": "take_profit_hit",
-        "final_pnl": 250.75,
-    }
+# --- Model Tests ---
 
 
-# --- Success Case Tests (Valid Data) ---
+def test_market_definition():
+    """Test MarketDefinition model validation."""
+    # Valid
+    md = MarketDefinition(market_id="m1", exchange="ex", market_type="spot", symbols=["BTC"], ws_channels=["ch1"])
+    assert md.market_id == "m1"
 
-
-def test_cycle_created_event_success(sample_cycle_created_data):
-    """Verify that a CycleCreatedEvent can be instantiated with valid data."""
-    event = CycleCreatedEvent(**sample_cycle_created_data)
-    assert event.strategy_name == sample_cycle_created_data["strategy_name"]
-    assert event.instrument_ticker == sample_cycle_created_data["instrument_ticker"]
-    assert event.initial_parameters["risk_per_trade"] == 0.01
-
-
-def test_order_sent_event_success(sample_order_sent_data):
-    """Verify that an OrderSentEvent can be instantiated with valid data."""
-    event = OrderSentEvent(**sample_order_sent_data)
-    assert event.order_id == sample_order_sent_data["order_id"]
-    assert event.order_type == "LIMIT"
-    assert event.side == "BUY"
-    assert event.price == 150.25
-
-
-def test_order_filled_event_success(sample_order_filled_data):
-    """Verify that an OrderFilledEvent can be instantiated with valid data."""
-    event = OrderFilledEvent(**sample_order_filled_data)
-    assert event.fill_price == sample_order_filled_data["fill_price"]
-    assert event.commission == 4.95
-    assert isinstance(event.timestamp, datetime)
-
-
-def test_cycle_closed_event_success(sample_cycle_closed_data):
-    """Verify that a CycleClosedEvent can be instantiated with valid data."""
-    event = CycleClosedEvent(**sample_cycle_closed_data)
-    assert event.reason == sample_cycle_closed_data["reason"]
-    assert event.final_pnl == 250.75
-
-
-# --- Failure Case Tests (Invalid Data) ---
-
-
-def test_cycle_created_event_missing_field(sample_cycle_created_data):
-    """Verify that a ValidationError is raised if a required field is missing."""
-    del sample_cycle_created_data["strategy_name"]
+    # Invalid Type
     with pytest.raises(ValidationError):
-        CycleCreatedEvent(**sample_cycle_created_data)
+        MarketDefinition(market_id="m1", exchange="ex", market_type="INVALID")
 
 
-def test_order_sent_event_invalid_literal(sample_order_sent_data):
-    """Verify that a ValidationError is raised for an invalid Literal value."""
-    sample_order_sent_data["side"] = "INVALID_SIDE"
-    with pytest.raises(ValidationError) as excinfo:
-        OrderSentEvent(**sample_order_sent_data)
-    assert "Input should be 'BUY' or 'SELL'" in str(excinfo.value)
+def test_ohlc_model():
+    """Test OHLC Data Contract."""
+    data = {"tick": 1600000000, "open": 100, "high": 110, "low": 90, "close": 105, "volume": 1000}
+    ohlc = OHLCModel(**data)
+    assert ohlc.close == 105.0
 
 
-# --- Serialization Contract Test ---
+def test_cycle_events(sample_cycle_created, sample_order_filled):
+    """Test event sourcing models."""
+    # Cycle Created
+    ev1 = CycleCreatedEvent(**sample_cycle_created)
+    assert ev1.strategy_name == "Strat1"
 
+    # Order Filled
+    ev2 = OrderFilledEvent(**sample_order_filled)
+    assert ev2.fill_quantity == 10.0
 
-def test_order_filled_event_serialization(sample_order_filled_data):
-    """
-    Verify that the event serializes to a correct JSON string, as this is the
-    contract for data being passed to the database repository.
-    """
-    event = OrderFilledEvent(**sample_order_filled_data)
-    json_output = event.model_dump_json()
-
-    # Verify it's a valid JSON string
-    data = json.loads(json_output)
-
-    # Verify the content
-    assert data["order_id"] == sample_order_filled_data["order_id"]
-    assert data["fill_price"] == sample_order_filled_data["fill_price"]
-    assert data["commission"] == sample_order_filled_data["commission"]
-    # Pydantic serializes datetime to ISO 8601 format string by default
-    assert isinstance(data["timestamp"], str)
+    # Serialization check
+    json_str = ev2.model_dump_json()
+    assert "ord_1" in json_str

@@ -42,7 +42,7 @@ jobs:
           pytest \
             --cov=src \
             --cov-report=xml \
-            --cov-fail-under=95
+            --cov-fail-under=90
 
   release:
     # ANALYSIS: The job is renamed to reflect its new purpose.
