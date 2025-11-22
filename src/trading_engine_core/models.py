@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+from .enums import MarketType
 
 # --- Base Configuration ---
 
@@ -28,17 +29,17 @@ class MarketDefinition(AppBaseModel):
 
     market_id: str = Field(..., description="Unique identifier, e.g., 'deribit-main'.")
     exchange: str = Field(..., description="Exchange name, e.g., 'deribit'.")
-    market_type: Literal["spot", "futures", "options"]
+    market_type: MarketType
     mode: str = Field(default="live", description="Operational mode: 'live', 'paper', 'backtest'.")
 
-    # Subscription details
+    # Subscription details (Keep these fields as they are)
     symbols: list[str] = Field(default_factory=list, description="Specific symbols to subscribe to.")
     ws_channels: list[str] = Field(default_factory=list, description="Raw WebSocket channel names.")
 
     # Hydrated fields (populated at runtime by config loader)
     ws_base_url: str | None = Field(default=None, description="Hydrated WebSocket URL.")
     rest_base_url: str | None = Field(default=None, description="Hydrated REST API URL.")
-
+    
 
 # --- Data Stream Models ---
 
