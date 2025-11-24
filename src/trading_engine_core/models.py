@@ -1,4 +1,3 @@
-# ~/trading-engine-core/src/trading_engine_core/models.py
 
 from datetime import datetime
 from typing import Any, Literal
@@ -14,7 +13,7 @@ class AppBaseModel(BaseModel):
 
     model_config = ConfigDict(
         populate_by_name=True,
-        extra="ignore",  # Default to ignoring extra fields to prevent crashes on API updates
+        extra="ignore",
     )
 
 
@@ -24,19 +23,13 @@ class AppBaseModel(BaseModel):
 class MarketDefinition(AppBaseModel):
     """
     Defines the connection and subscription details for a specific market.
-    Merged from local and library versions.
     """
-
     market_id: str = Field(..., description="Unique identifier, e.g., 'deribit-main'.")
     exchange: str = Field(..., description="Exchange name, e.g., 'deribit'.")
     market_type: MarketType
     mode: str = Field(default="live", description="Operational mode: 'live', 'paper', 'backtest'.")
-
-    # Subscription details (Keep these fields as they are)
     symbols: list[str] = Field(default_factory=list, description="Specific symbols to subscribe to.")
     ws_channels: list[str] = Field(default_factory=list, description="Raw WebSocket channel names.")
-
-    # Hydrated fields (populated at runtime by config loader)
     ws_base_url: str | None = Field(default=None, description="Hydrated WebSocket URL.")
     rest_base_url: str | None = Field(default=None, description="Hydrated REST API URL.")
     
@@ -46,7 +39,6 @@ class MarketDefinition(AppBaseModel):
 
 class OHLCModel(AppBaseModel):
     """Standard Open-High-Low-Close candle data."""
-
     tick: int = Field(..., description="Unix timestamp in milliseconds.")
     open: float
     high: float
@@ -60,7 +52,6 @@ class OHLCModel(AppBaseModel):
 
 class StreamMessage(AppBaseModel):
     """Standard wrapper for incoming WebSocket messages."""
-
     channel: str
     exchange: str
     timestamp: int
@@ -71,10 +62,7 @@ class StreamMessage(AppBaseModel):
 
 
 class InstrumentModel(AppBaseModel):
-    """
-    A validated model for a financial instrument.
-    """
-
+    """A validated model for a financial instrument."""
     exchange: str
     instrument_name: str
     market_type: str
@@ -90,10 +78,7 @@ class InstrumentModel(AppBaseModel):
 
 
 class OrderModel(AppBaseModel):
-    """
-    Represents the state of an order in the system.
-    """
-
+    """Represents the state of an order in the system."""
     order_id: str
     instrument_name: str
     order_state: str
@@ -107,13 +92,11 @@ class OrderModel(AppBaseModel):
     timestamp: int
     last_update_timestamp: int
     creation_timestamp: int
-
     model_config = ConfigDict(extra="allow")
 
 
 class MarginCalculationResult(AppBaseModel):
     """Output of PME/Risk calculations."""
-
     initial_margin: float
     maintenance_margin: float
     is_valid: bool
@@ -125,7 +108,6 @@ class MarginCalculationResult(AppBaseModel):
 
 class BaseEvent(AppBaseModel):
     """Abstract base for event-sourced activities."""
-
     pass
 
 
@@ -151,6 +133,16 @@ class OrderFilledEvent(BaseEvent):
     timestamp: datetime
 
 
+class CycleStateUpdatedEvent(BaseEvent):
+    """
+    [NEW] An event representing an internal state transition of a TradeCycle.
+    This makes the application's internal "thinking" process an auditable event.
+    """
+    previous_status: str
+    new_status: str
+    reason: str
+
+
 class CycleClosedEvent(BaseEvent):
     reason: str
     final_pnl: float
@@ -161,7 +153,6 @@ class CycleClosedEvent(BaseEvent):
 
 class TradeNotification(AppBaseModel):
     """A structured model for a trade notification."""
-
     direction: str
     amount: float
     instrument_name: str
@@ -170,7 +161,6 @@ class TradeNotification(AppBaseModel):
 
 class SystemAlert(AppBaseModel):
     """A structured model for a system-level alert."""
-
     component: str
     event: str
     details: str
