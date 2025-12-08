@@ -13,4 +13,4 @@ class RiskManagementSettings(BaseModel):
     max_position_notional_usd: float
     price_deviation_tolerance_pct: float
     equity_dust_threshold: float
-    hedged_currencies: List[str]
+    excluded_from_hedge: List[str]
