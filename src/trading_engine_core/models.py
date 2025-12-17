@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any, Dict, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -175,3 +175,12 @@ class SystemAlert(AppBaseModel):
     event: str
     details: str
     severity: Literal["INFO", "WARNING", "CRITICAL"] = "CRITICAL"
+
+class SignalEvent(BaseModel):
+    timestamp: float
+    strategy_name: str
+    symbol: str
+    exchange: str
+    signal_type: str # "LONG", "SHORT", "ALERT"
+    strength: float  # 0.0 to 1.0 (RVOL / Max_RVOL)
+    metadata: Dict[str, Any] # {"rvol": 5.2, "delta": 0.4, "venues": [...]}
