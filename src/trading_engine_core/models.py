@@ -23,17 +23,19 @@ class AppBaseModel(BaseModel):
 class MarketDefinition(AppBaseModel):
     """
     Defines the connection and subscription details for a specific market.
+    This is the authoritative model.
     """
-
     market_id: str = Field(..., description="Unique identifier, e.g., 'deribit-main'.")
     exchange: str = Field(..., description="Exchange name, e.g., 'deribit'.")
     market_type: MarketType
+    
+    output_stream_name: str = Field(..., description="The Redis stream for this market's data, e.g., 'market:stream:binance:trades'.")
+    
     mode: str = Field(default="live", description="Operational mode: 'live', 'paper', 'backtest'.")
     symbols: list[str] = Field(default_factory=list, description="Specific symbols to subscribe to.")
     ws_channels: list[str] = Field(default_factory=list, description="Raw WebSocket channel names.")
     ws_base_url: str | None = Field(default=None, description="Hydrated WebSocket URL.")
     rest_base_url: str | None = Field(default=None, description="Hydrated REST API URL.")
-
 
 # --- Data Stream Models ---
 
