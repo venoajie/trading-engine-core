@@ -1,5 +1,7 @@
+# trading_engine_core/models.py
+
 from datetime import datetime
-from typing import Any, Dict, Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -25,30 +27,42 @@ class MarketDefinition(AppBaseModel):
     Defines the connection and subscription details for a specific market.
     This is the authoritative model.
     """
+
     market_id: str = Field(..., description="Unique identifier, e.g., 'deribit-main'.")
     exchange: str = Field(..., description="Exchange name, e.g., 'deribit'.")
     market_type: MarketType
-    
-    output_stream_name: str = Field(..., description="The Redis stream for this market's data, e.g., 'market:stream:binance:trades'.")
-    
+
+    output_stream_name: str = Field(
+        ..., description="The Redis stream for this market's data, e.g., 'market:stream:binance:trades'."
+    )
+
     mode: str = Field(default="live", description="Operational mode: 'live', 'paper', 'backtest'.")
     symbols: list[str] = Field(default_factory=list, description="Specific symbols to subscribe to.")
     ws_channels: list[str] = Field(default_factory=list, description="Raw WebSocket channel names.")
     ws_base_url: str | None = Field(default=None, description="Hydrated WebSocket URL.")
     rest_base_url: str | None = Field(default=None, description="Hydrated REST API URL.")
 
+
 # --- Data Stream Models ---
 
 
 class OHLCModel(AppBaseModel):
-    """Standard Open-High-Low-Close candle data."""
+    """
+    Standard Open-High-Low-Close candle data.
+    Updated for Project Microstructure Alpha to include granular volume data.
+    """
 
     tick: int = Field(..., description="Unix timestamp in milliseconds.")
     open: float
     high: float
     low: float
     close: float
-    volume: float
+    volume: float = Field(..., description="Total volume (taker_buy + taker_sell).")
+
+    # --- Microstructure Metrics ---
+    taker_buy_volume: float = Field(default=0.0, description="Volume where buyer was taker (Aggressive Buy).")
+    taker_sell_volume: float = Field(default=0.0, description="Volume where seller was taker (Aggressive Sell).")
+
     open_interest: float | None = None
     instrument_name: str | None = None
     resolution: str | None = None
@@ -178,11 +192,12 @@ class SystemAlert(AppBaseModel):
     details: str
     severity: Literal["INFO", "WARNING", "CRITICAL"] = "CRITICAL"
 
+
 class SignalEvent(BaseModel):
     timestamp: float
     strategy_name: str
     symbol: str
     exchange: str
-    signal_type: str # "LONG", "SHORT", "ALERT"
+    signal_type: str  # "LONG", "SHORT", "ALERT"
     strength: float  # 0.0 to 1.0 (RVOL / Max_RVOL)
-    metadata: Dict[str, Any] # {"rvol": 5.2, "delta": 0.4, "venues": [...]}
+    metadata: dict[str, Any]  # {"rvol": 5.2, "delta": 0.4, "venues": [...]}
