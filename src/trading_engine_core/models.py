@@ -32,9 +32,7 @@ class MarketDefinition(AppBaseModel):
     exchange: str = Field(..., description="Exchange name, e.g., 'deribit'.")
     market_type: MarketType
 
-    output_stream_name: str = Field(
-        ..., description="The Redis stream for this market's data, e.g., 'market:stream:binance:trades'."
-    )
+    output_stream_name: str = Field(..., description="The Redis stream for this market's data, e.g., 'market:stream:binance:trades'.")
 
     mode: str = Field(default="live", description="Operational mode: 'live', 'paper', 'backtest'.")
     symbols: list[str] = Field(default_factory=list, description="Specific symbols to subscribe to.")

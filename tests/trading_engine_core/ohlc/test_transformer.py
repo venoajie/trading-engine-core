@@ -1,7 +1,7 @@
-
 # tests/trading_engine_core/ohlc/test_transformer.py
 
 import pytest
+
 from trading_engine_core.models import OHLCModel
 from trading_engine_core.ohlc.transformer import transform_tv_data_to_ohlc_models
 
@@ -28,9 +28,7 @@ def test_transform_happy_path(sample_valid_tv_data):
     instrument = "BTCUSDT"
     resolution = "1"
 
-    result = transform_tv_data_to_ohlc_models(
-        sample_valid_tv_data, exchange, instrument, resolution
-    )
+    result = transform_tv_data_to_ohlc_models(sample_valid_tv_data, exchange, instrument, resolution)
 
     assert isinstance(result, list)
     assert len(result) == 2
@@ -58,9 +56,7 @@ def test_transform_mismatched_lengths(sample_valid_tv_data):
     sample_valid_tv_data["volume"].pop()
     assert len(sample_valid_tv_data["ticks"]) != len(sample_valid_tv_data["volume"])
 
-    result = transform_tv_data_to_ohlc_models(
-        sample_valid_tv_data, "binance", "BTCUSDT", "1"
-    )
+    result = transform_tv_data_to_ohlc_models(sample_valid_tv_data, "binance", "BTCUSDT", "1")
 
     assert isinstance(result, list)
     assert len(result) == 0
@@ -70,9 +66,7 @@ def test_transform_empty_data_lists():
     """
     Tests that the function handles data with empty lists correctly.
     """
-    empty_data = {
-        "ticks": [], "open": [], "high": [], "low": [], "close": [], "volume": []
-    }
+    empty_data = {"ticks": [], "open": [], "high": [], "low": [], "close": [], "volume": []}
     result = transform_tv_data_to_ohlc_models(empty_data, "binance", "BTCUSDT", "1")
     assert result == []
 

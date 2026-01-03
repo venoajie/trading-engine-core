@@ -1,11 +1,9 @@
-
 # tests/trading_engine_core/test_models.py
 
 import pytest
 from pydantic import ValidationError
 
 from trading_engine_core.models import OHLCModel, SignalEvent, StreamMessage
-from trading_engine_core.enums import MarketType
 
 
 def test_ohlc_model_instantiation_happy_path():

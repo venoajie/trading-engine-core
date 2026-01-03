@@ -38,10 +38,7 @@ def transform_tv_data_to_ohlc_models(
             return []
 
         if not (len(ticks) == len(opens) == len(highs) == len(lows) == len(closes) == len(volumes)):
-            log.error(
-                f"Mismatched OHLC array lengths for {instrument_name}. "
-                f"Ticks: {len(ticks)}, Opens: {len(opens)}, etc. Skipping chunk."
-            )
+            log.error(f"Mismatched OHLC array lengths for {instrument_name}. Ticks: {len(ticks)}, Opens: {len(opens)}, etc. Skipping chunk.")
             return []
 
         for i, tick_ms in enumerate(ticks):
