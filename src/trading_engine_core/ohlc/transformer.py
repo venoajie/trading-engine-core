@@ -1,3 +1,4 @@
+
 # src/trading_engine_core/ohlc/transformer.py
 
 # --- Built Ins  ---
@@ -17,8 +18,10 @@ def transform_tv_data_to_ohlc_models(
     resolution_str: str,
 ) -> list[OHLCModel]:
     """
-    Transforms TradingView-style chart data into a list of canonical, validated
-    OHLCModel Pydantic objects. This is the single source of truth for this transformation.
+    Transforms TradingView-style chart data (Columnar/Dict of Lists) into OHLCModels.
+    
+    Updated for Microstructure Alpha:
+    - Parses 'taker_buy_volume' and 'taker_sell_volume' arrays if present.
     """
     records: list[OHLCModel] = []
     try:
@@ -32,32 +35,77 @@ def transform_tv_data_to_ohlc_models(
         lows = tv_data.get("low", [])
         closes = tv_data.get("close", [])
         volumes = tv_data.get("volume", [])
+        
+        # Optional Microstructure Arrays
+        taker_buys = tv_data.get("taker_buy_volume", [])
+        taker_sells = tv_data.get("taker_sell_volume", [])
 
-        if not all(isinstance(lst, list) for lst in [ticks, opens, highs, lows, closes, volumes]):
+        # Validate Standard Fields
+        mandatory_lists = [ticks, opens, highs, lows, closes, volumes]
+        if not all(isinstance(lst, list) for lst in mandatory_lists):
             log.error(f"API returned non-list data for {instrument_name}. Skipping chunk.")
             return []
 
-        if not (len(ticks) == len(opens) == len(highs) == len(lows) == len(closes) == len(volumes)):
-            log.error(f"Mismatched OHLC array lengths for {instrument_name}. Ticks: {len(ticks)}, Opens: {len(opens)}, etc. Skipping chunk.")
+        length = len(ticks)
+        if not all(len(lst) == length for lst in mandatory_lists):
+            log.error(f"Mismatched OHLC array lengths for {instrument_name}. Skipping chunk.")
             return []
+            
+        # Check if Microstructure data matches length
+        has_micro_data = (len(taker_buys) == length and len(taker_sells) == length)
 
-        for i, tick_ms in enumerate(ticks):
-            # Instantiate the Pydantic model directly to enforce the contract.
+        for i in range(length):
             model = OHLCModel(
                 exchange=exchange_name,
                 instrument_name=instrument_name,
                 resolution=resolution_str,
-                tick=tick_ms,
-                open=opens[i],
-                high=highs[i],
-                low=lows[i],
-                close=closes[i],
-                volume=volumes[i],
+                tick=int(ticks[i]),
+                open=float(opens[i]),
+                high=float(highs[i]),
+                low=float(lows[i]),
+                close=float(closes[i]),
+                volume=float(volumes[i]),
+                # Default to 0.0 if not present (e.g. Deribit API)
+                taker_buy_volume=float(taker_buys[i]) if has_micro_data else 0.0,
+                taker_sell_volume=float(taker_sells[i]) if has_micro_data else 0.0
             )
             records.append(model)
 
     except (TypeError, IndexError, ValueError) as e:
-        log.error(f"Error processing API data into OHLCModel for {instrument_name}: {e}", exc_info=True)
+        log.error(f"Error processing TV data for {instrument_name}: {e}", exc_info=True)
         return []
 
+    return records
+
+
+def transform_canonical_list_to_ohlc_models(
+    data: list[dict[str, Any]]
+) -> list[OHLCModel]:
+    """
+    Transforms a list of canonical dictionaries (Row-based) into OHLCModels.
+    Used by PublicClients (e.g., Binance) and Backfill workers.
+    """
+    records: list[OHLCModel] = []
+    for item in data:
+        try:
+            model = OHLCModel(
+                exchange=item["exchange"],
+                instrument_name=item["instrument_name"],
+                resolution=item["resolution"],
+                tick=item["tick"],
+                open=item["open"],
+                high=item["high"],
+                low=item["low"],
+                close=item["close"],
+                volume=item["volume"],
+                # Keys injected by Client logic (e.g. BinancePublicClient)
+                # Defaults to 0.0 for safety
+                taker_buy_volume=item.get("taker_buy_volume", 0.0),
+                taker_sell_volume=item.get("taker_sell_volume", 0.0)
+            )
+            records.append(model)
+        except (KeyError, ValueError) as e:
+            log.error(f"Failed to transform row to OHLCModel: {e}. Row: {item}")
+            continue
+            
     return records
