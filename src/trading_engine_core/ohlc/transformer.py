@@ -1,4 +1,3 @@
-
 # src/trading_engine_core/ohlc/transformer.py
 
 # --- Built Ins  ---
@@ -19,7 +18,7 @@ def transform_tv_data_to_ohlc_models(
 ) -> list[OHLCModel]:
     """
     Transforms TradingView-style chart data (Columnar/Dict of Lists) into OHLCModels.
-    
+
     Updated for Microstructure Alpha:
     - Parses 'taker_buy_volume' and 'taker_sell_volume' arrays if present.
     """
@@ -35,7 +34,7 @@ def transform_tv_data_to_ohlc_models(
         lows = tv_data.get("low", [])
         closes = tv_data.get("close", [])
         volumes = tv_data.get("volume", [])
-        
+
         # Optional Microstructure Arrays
         taker_buys = tv_data.get("taker_buy_volume", [])
         taker_sells = tv_data.get("taker_sell_volume", [])
@@ -50,9 +49,9 @@ def transform_tv_data_to_ohlc_models(
         if not all(len(lst) == length for lst in mandatory_lists):
             log.error(f"Mismatched OHLC array lengths for {instrument_name}. Skipping chunk.")
             return []
-            
+
         # Check if Microstructure data matches length
-        has_micro_data = (len(taker_buys) == length and len(taker_sells) == length)
+        has_micro_data = len(taker_buys) == length and len(taker_sells) == length
 
         for i in range(length):
             model = OHLCModel(
@@ -67,7 +66,7 @@ def transform_tv_data_to_ohlc_models(
                 volume=float(volumes[i]),
                 # Default to 0.0 if not present (e.g. Deribit API)
                 taker_buy_volume=float(taker_buys[i]) if has_micro_data else 0.0,
-                taker_sell_volume=float(taker_sells[i]) if has_micro_data else 0.0
+                taker_sell_volume=float(taker_sells[i]) if has_micro_data else 0.0,
             )
             records.append(model)
 
@@ -78,9 +77,7 @@ def transform_tv_data_to_ohlc_models(
     return records
 
 
-def transform_canonical_list_to_ohlc_models(
-    data: list[dict[str, Any]]
-) -> list[OHLCModel]:
+def transform_canonical_list_to_ohlc_models(data: list[dict[str, Any]]) -> list[OHLCModel]:
     """
     Transforms a list of canonical dictionaries (Row-based) into OHLCModels.
     Used by PublicClients (e.g., Binance) and Backfill workers.
@@ -101,11 +98,11 @@ def transform_canonical_list_to_ohlc_models(
                 # Keys injected by Client logic (e.g. BinancePublicClient)
                 # Defaults to 0.0 for safety
                 taker_buy_volume=item.get("taker_buy_volume", 0.0),
-                taker_sell_volume=item.get("taker_sell_volume", 0.0)
+                taker_sell_volume=item.get("taker_sell_volume", 0.0),
             )
             records.append(model)
         except (KeyError, ValueError) as e:
             log.error(f"Failed to transform row to OHLCModel: {e}. Row: {item}")
             continue
-            
+
     return records
