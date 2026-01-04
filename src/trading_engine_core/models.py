@@ -156,7 +156,7 @@ class OrderFilledEvent(BaseEvent):
 
 class CycleStateUpdatedEvent(BaseEvent):
     """
-    [NEW] An event representing an internal state transition of a TradeCycle.
+    An event representing an internal state transition of a TradeCycle.
     This makes the application's internal "thinking" process an auditable event.
     """
 
