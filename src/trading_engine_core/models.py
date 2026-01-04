@@ -194,6 +194,46 @@ class SystemAlert(AppBaseModel):
     severity: Literal["INFO", "WARNING", "CRITICAL"] = "CRITICAL"
 
 
+class TakerMetrics(BaseModel):
+    """
+    Real-time microstructure metrics calculated by the Analyzer.
+    """
+
+    symbol: str
+    timestamp: float
+
+    # Windowed Metrics (1m, 5m, 1h)
+    tbsr_1m: float = Field(default=1.0, description="Taker Buy/Sell Ratio (1 min)")
+    tbsr_5m: float = Field(default=1.0, description="Taker Buy/Sell Ratio (5 min)")
+
+    net_delta_1m: float = Field(default=0.0, description="Taker Buy Vol - Taker Sell Vol (1 min)")
+
+    taker_buy_vol_5m: float = 0.0
+    taker_sell_vol_5m: float = 0.0
+
+    # Aggression Score (0-100)
+    aggression_score: float = 0.0
+
+
+class MarketContext(BaseModel):
+    """
+    The '6 Layers' of Context for decision making.
+    """
+
+    regime: str = "NEUTRAL"  # BULL_MARKET, BEAR_MARKET, NEUTRAL
+    liquidity_tier: str = "TIER_2"  # TIER_1 (High) to TIER_4 (DEX Junk)
+    pump_phase: str = "ACCUMULATION"  # ACCUMULATION, IGNITION, PARABOLIC, DISTRIBUTION, COLLAPSE
+    whale_activity: str = "UNKNOWN"  # ACCUMULATING, DISTRIBUTING, NEUTRAL
+    next_catalyst: str | None = None
+
+    # --- NEW TEMPORAL FIELDS ---
+    session_name: str = Field(default="UNKNOWN", description="ASIA, LONDON, NY, DEAD_ZONE")
+    is_weekend: bool = Field(default=False, description="True if Sat/Sun UTC")
+    is_low_liquidity_hour: bool = Field(default=False, description="True if in Dead Zone or Asian Lunch")
+
+    sentiment_score: float = 0.5
+
+
 class SignalEvent(BaseModel):
     timestamp: float
     strategy_name: str
@@ -202,3 +242,21 @@ class SignalEvent(BaseModel):
     signal_type: str  # "LONG", "SHORT", "ALERT"
     strength: float  # 0.0 to 1.0 (RVOL / Max_RVOL)
     metadata: dict[str, Any]  # {"rvol": 5.2, "delta": 0.4, "venues": [...]}
+
+
+class EnhancedSignalEvent(BaseModel):
+    """
+    Signal Event enriched with Microstructure and Context data.
+    """
+
+    timestamp: float
+    strategy_name: str
+    symbol: str
+    exchange: str
+    signal_type: str
+    strength: float
+
+    # New Fields
+    metrics: TakerMetrics
+    context: MarketContext
+    metadata: dict[str, Any]
