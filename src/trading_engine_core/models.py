@@ -1,3 +1,6 @@
+
+--- START OF FILE models.py ---
+
 # trading_engine_core/models.py
 
 from datetime import datetime
@@ -49,6 +52,10 @@ class OHLCModel(AppBaseModel):
     Standard Open-High-Low-Close candle data.
     Updated for Project Microstructure Alpha to include granular volume data.
     """
+    # [FIX] Added exchange field to ensure context is preserved in model dumps
+    exchange: str | None = None
+    instrument_name: str | None = None
+    resolution: str | None = None
 
     tick: int = Field(..., description="Unix timestamp in milliseconds.")
     open: float
@@ -62,8 +69,6 @@ class OHLCModel(AppBaseModel):
     taker_sell_volume: float = Field(default=0.0, description="Volume where seller was taker (Aggressive Sell).")
 
     open_interest: float | None = None
-    instrument_name: str | None = None
-    resolution: str | None = None
 
 
 class StreamMessage(AppBaseModel):
