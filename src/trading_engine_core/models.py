@@ -199,38 +199,32 @@ class TakerMetrics(BaseModel):
     Real-time microstructure metrics calculated by the Analyzer.
     """
 
+    """Real-time microstructure metrics."""
     symbol: str
     timestamp: float
-
-    # Windowed Metrics (1m, 5m, 1h)
-    tbsr_1m: float = Field(default=1.0, description="Taker Buy/Sell Ratio (1 min)")
     tbsr_5m: float = Field(default=1.0, description="Taker Buy/Sell Ratio (5 min)")
-
-    net_delta_1m: float = Field(default=0.0, description="Taker Buy Vol - Taker Sell Vol (1 min)")
-
+    net_delta_1m: float = Field(default=0.0, description="Taker Buy Vol - Taker Sell Vol")
     taker_buy_vol_5m: float = 0.0
     taker_sell_vol_5m: float = 0.0
-
-    # Aggression Score (0-100)
-    aggression_score: float = 0.0
+    aggression_score: float = 50.0
 
 
 class MarketContext(BaseModel):
-    """
-    The '6 Layers' of Context for decision making.
-    """
+    """The 6-Layer Context Grid."""
 
-    regime: str = "NEUTRAL"  # BULL_MARKET, BEAR_MARKET, NEUTRAL
-    liquidity_tier: str = "TIER_2"  # TIER_1 (High) to TIER_4 (DEX Junk)
-    pump_phase: str = "ACCUMULATION"  # ACCUMULATION, IGNITION, PARABOLIC, DISTRIBUTION, COLLAPSE
-    whale_activity: str = "UNKNOWN"  # ACCUMULATING, DISTRIBUTING, NEUTRAL
-    next_catalyst: str | None = None
-
-    # --- NEW TEMPORAL FIELDS ---
-    session_name: str = Field(default="UNKNOWN", description="ASIA, LONDON, NY, DEAD_ZONE")
-    is_weekend: bool = Field(default=False, description="True if Sat/Sun UTC")
-    is_low_liquidity_hour: bool = Field(default=False, description="True if in Dead Zone or Asian Lunch")
-
+    # 1. Regime
+    regime: str = "NEUTRAL"
+    # 2. Liquidity
+    liquidity_tier: str = "TIER_2"
+    # 3. Temporal (Chronos)
+    session_name: str = "UNKNOWN"
+    is_weekend: bool = False
+    is_low_liquidity_hour: bool = False
+    # 4. Phase
+    pump_phase: str = "UNKNOWN"
+    # 5. Whale
+    whale_activity: str = "UNKNOWN"
+    # 6. Sentiment
     sentiment_score: float = 0.5
 
 
@@ -245,18 +239,16 @@ class SignalEvent(BaseModel):
 
 
 class EnhancedSignalEvent(BaseModel):
-    """
-    Signal Event enriched with Microstructure and Context data.
-    """
+    """Signal Event enriched with Context."""
 
     timestamp: float
     strategy_name: str
     symbol: str
     exchange: str
     signal_type: str
-    strength: float
+    strength: float  # 0.0 to 1.0
 
-    # New Fields
-    metrics: TakerMetrics
-    context: MarketContext
-    metadata: dict[str, Any]
+    # Enriched Payload
+    metrics: TakerMetrics | None = None
+    context: MarketContext | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
