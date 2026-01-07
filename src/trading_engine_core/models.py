@@ -5,9 +5,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .enums import MarketType
-
-# --- Base Configuration ---
+from .enums import MarketType, StorageMode
 
 
 class AppBaseModel(BaseModel):
@@ -17,6 +15,29 @@ class AppBaseModel(BaseModel):
         populate_by_name=True,
         extra="ignore",
     )
+
+
+# --- Canonical Model for Universe State ---
+
+
+class ActiveLedgerEntry(AppBaseModel):
+    """
+    The canonical data contract for a single entry in the active trading universe.
+    This is published by the Janitor and consumed by all downstream services.
+    """
+
+    # Static Instrument Details (from `instruments` table)
+    instrument_id: int
+    exchange: str
+    instrument_name: str
+    base_asset: str
+    quote_asset: str
+    market_type: MarketType
+
+    # Dynamic Routing & Strategy Metadata (Calculated by Janitor)
+    storage_mode: StorageMode = StorageMode.UNKNOWN
+    # List of strategy profiles that this asset qualifies for.
+    matched_profiles: list[str] = Field(default_factory=list)
 
 
 # --- Configuration Models (Used by shared-config) ---
@@ -50,7 +71,6 @@ class OHLCModel(AppBaseModel):
     Updated for Project Microstructure Alpha to include granular volume data.
     """
 
-    # [FIX] Added exchange field to ensure context is preserved in model dumps
     exchange: str | None = None
     instrument_name: str | None = None
     resolution: str | None = None

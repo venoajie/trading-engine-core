@@ -20,3 +20,11 @@ class MarketType(str, Enum):
     INVERSE_OPTIONS = "inverse_options"
     INVERSE_OPTIONS_COMBO = "inverse_options_combo"
     UNKNOWN = "unknown"
+
+
+class StorageMode(str, Enum):
+    """Defines the authoritative storage backend for an asset's market data."""
+
+    PERSISTENT = "POSTGRES"
+    EPHEMERAL = "REDIS_BUFFER"
+    UNKNOWN = "UNKNOWN"
