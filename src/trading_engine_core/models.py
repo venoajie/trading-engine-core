@@ -205,19 +205,27 @@ class TradeNotification(AppBaseModel):
     price: float
 
 
-class OrderNotificationEvent(AppBaseModel):
+class TradeNotificationEvent(AppBaseModel):
     """
-    Event published when an order modified.
+    Event published when a private trade execution occurs.
     """
-
     event_type: str = "TRADE_EXECUTION"
-    exchange: str
     instrument_name: str
     direction: str
     amount: float
     price: float
 
-
+class OrderModificationEvent(AppBaseModel):
+    """
+    Event published when a private order modification occurs.
+    """
+    event_type: str = "ORDER_MODIFICATION"
+    exchange: str
+    instrument_name: str
+    direction: str
+    amount: float
+    price: float
+    
 class SystemAlert(AppBaseModel):
     """A structured model for a system-level alert."""
 
