@@ -86,8 +86,9 @@ class OHLCModel(AppBaseModel):
     taker_buy_volume: float = Field(default=0.0, description="Volume where buyer was taker (Aggressive Buy).")
     taker_sell_volume: float = Field(default=0.0, description="Volume where seller was taker (Aggressive Sell).")
 
-    open_interest: float | None = None
-
+    # Disallow None for numeric fields. Provide a concrete default.
+    # This prevents serialization and casting errors in all downstream services.
+    open_interest: float = Field(default=0.0)
 
 class StreamMessage(AppBaseModel):
     """Standard wrapper for incoming WebSocket messages."""
@@ -209,23 +210,27 @@ class TradeNotificationEvent(AppBaseModel):
     """
     Event published when a private trade execution occurs.
     """
+
     event_type: str = "TRADE_EXECUTION"
     instrument_name: str
     direction: str
     amount: float
     price: float
 
+
 class OrderModificationEvent(AppBaseModel):
     """
     Event published when a private order modification occurs.
     """
+
     event_type: str = "ORDER_MODIFICATION"
     exchange: str
     instrument_name: str
     direction: str
     amount: float
     price: float
-    
+
+
 class SystemAlert(AppBaseModel):
     """A structured model for a system-level alert."""
 
