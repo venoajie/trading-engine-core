@@ -1,8 +1,6 @@
-# src\trading_engine_core\enums.py
+# src/trading_engine_core/enums.py
 
-# --- Built Ins  ---
 from enum import Enum
-
 
 class MarketType(str, Enum):
     """
@@ -11,6 +9,7 @@ class MarketType(str, Enum):
     """
 
     SPOT = "spot"
+    SPOT_TICKER_24H = "spot_ticker_24h"    
     LINEAR_FUTURES = "linear_futures"
     LINEAR_FUTURES_COMBO = "linear_futures_combo"
     LINEAR_OPTIONS = "linear_options"
@@ -20,11 +19,3 @@ class MarketType(str, Enum):
     INVERSE_OPTIONS = "inverse_options"
     INVERSE_OPTIONS_COMBO = "inverse_options_combo"
     UNKNOWN = "unknown"
-
-
-class StorageMode(str, Enum):
-    """Defines the authoritative storage backend for an asset's market data."""
-
-    PERSISTENT = "POSTGRES"
-    EPHEMERAL = "REDIS_BUFFER"
-    UNKNOWN = "UNKNOWN"
